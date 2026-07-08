@@ -48,7 +48,7 @@ export default function Home() {
         code efficiently.
       </p>
 
-      <Link href="/dashboard" className="mt-5">
+      <Link href="/dashboard" className="">
         <Button
           variant="brand"
           size="lg"
