@@ -1,5 +1,5 @@
 import { ThemeToggle } from '@/components/ui/theme-toggle'
-import { getAllPlaygroundForUser } from '@/modules/dashboard/actions'
+import { deleteProjectById, duplicateProjectById, editProjectById, getAllPlaygroundForUser } from '@/modules/dashboard/actions'
 import AddNewButton from '@/modules/dashboard/components/add-new'
 import AddRepo from '@/modules/dashboard/components/add-repo'
 import EmptyState from '@/modules/dashboard/components/empty-state'
@@ -23,9 +23,9 @@ const Page = async () => {
             <EmptyState />
           ) : (
             <ProjectTable projects={playgrounds || []}
-              onDeleteProjects={() => { }}
-              onUpdateProjects={() => { }}
-              onDuplicateProjects={() => { }}
+              onDeleteProject={ deleteProjectById}
+              onUpdateProject={ editProjectById}
+              onDuplicateProject={ duplicateProjectById}
             />
           )
         }
