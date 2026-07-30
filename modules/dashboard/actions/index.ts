@@ -7,40 +7,40 @@ import { AwardIcon } from "lucide-react";
 import { revalidatePath } from "next/cache";
 
 
-export const toggleStarMarked = async(playgroundId:string,isChecked:boolean)=>{
+export const toggleStarMarked = async (playgroundId: string, isChecked: boolean) => {
     const user = await currentUser();
     const userId = user?.id;
 
-    if(!userId){
+    if (!userId) {
         throw new Error("User Id is Reequired");
     }
     try {
-        if(isChecked){
+        if (isChecked) {
             await db.starMark.create({
-                data:{
+                data: {
                     userId: userId!,
                     playgroundId,
                     isMarked: isChecked,
                 }
             })
-        }else{
+        } else {
             await db.starMark.delete({
-                
-                where:{
-                    userId_playgroundId:{
+
+                where: {
+                    userId_playgroundId: {
                         userId,
-                        playgroundId:playgroundId
+                        playgroundId: playgroundId
                     }
                 }
-        })
-       
+            })
+
+        }
+        revalidatePath("/dashboard");
+        return { success: true, isMarked: isChecked };
+    } catch (error) {
+        console.log("Error updating problem:", error);
+        return { success: false, error: "Failed to update problem" };
     }
-     revalidatePath("/dashboard");
-    return {success:true,isMarked:isChecked};
-}catch (error) {
-        console.log("Error updating problem:",error);
-        return {success:false,error:"Failed to update problem"};
-}
 }
 export const getAllPlaygroundForUser = async () => {
     const user = await currentUser();
@@ -53,12 +53,12 @@ export const getAllPlaygroundForUser = async () => {
             include: {
                 user: true,
                 Starmark: {
-                   where:{
-                    userId:user?.id
-                   } ,
-                   select:{
-                    isMarked:true
-                   }
+                    where: {
+                        userId: user?.id
+                    },
+                    select: {
+                        isMarked: true
+                    }
                 }
             },
         });
@@ -110,14 +110,14 @@ export const deleteProjectById = async (id: string) => {
 
 export const editProjectById = async (
     id: string,
-    data: { title: string; description:string },
-) => { 
+    data: { title: string; description: string },
+) => {
     try {
         await db.playground.update({
-            where:{
+            where: {
                 id
             },
-            data:data
+            data: data
         })
         revalidatePath("/dashboard");
     } catch (error) {
@@ -126,24 +126,24 @@ export const editProjectById = async (
 };
 
 
-export const duplicateProjectById = async(id:string)=>{
+export const duplicateProjectById = async (id: string) => {
     try {
         const originalPlayground = await db.playground.findFirst({
-            where:{
+            where: {
                 id
             }
             // todo: add template files
 
         })
-        if(!originalPlayground){
+        if (!originalPlayground) {
             throw new Error("Original playground not found")
         }
         const duplicatePlayground = await db.playground.create({
-            data:{
-                title:`${originalPlayground.title} (Copy)`,
+            data: {
+                title: `${originalPlayground.title} (Copy)`,
                 description: originalPlayground.description,
-                template:originalPlayground.template,
-                userId:originalPlayground.userId,
+                template: originalPlayground.template,
+                userId: originalPlayground.userId,
 
                 // todo: add template files
             }
