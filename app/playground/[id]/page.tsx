@@ -7,6 +7,11 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +21,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import PlaygroundEditor from "@/modules/playground/components/playground-editor";
 import { TemplateFileTree } from "@/modules/playground/components/playground-explorer";
 import { useFileExplorer } from "@/modules/playground/hooks/useFileExplorer";
 import { usePlayground } from "@/modules/playground/hooks/usePlayground";
@@ -104,7 +110,7 @@ const MainPlaygroundPage = () => {
                             </div>
                             <div className="flex items-center gap-1">
                                 <Tooltip>
-                                    <TooltipTrigger>
+                                    <TooltipTrigger asChild>
                                         <Button
                                             size="sm"
                                             variant="outline"
@@ -313,7 +319,16 @@ const MainPlaygroundPage = () => {
                                 </div>
 
                                 <div className="flex-1">
-                                            {activeFile?.content}
+                                    <ResizablePanelGroup orientation="horizontal">
+                                        <ResizablePanel defaultSize = {isPreviewVisible ? 50 : 100}>
+                                            
+                                            <PlaygroundEditor
+                                            activeFile={activeFile}
+                                            content={activeFile?.content || ""}
+                                            onContentChange= {()=>{}}
+                                            />
+                                        </ResizablePanel>
+                                    </ResizablePanelGroup>
                                 </div>
                             </div>
                         ) : (
@@ -330,7 +345,7 @@ const MainPlaygroundPage = () => {
                                     Select a file from the sidebar to start editing your code.
                                 </p>
 
-                               
+
                             </div>
                         )}
                     </div>
