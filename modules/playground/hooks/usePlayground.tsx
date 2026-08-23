@@ -54,7 +54,11 @@ export const usePlayground = (id: string): UsePlaygroundReturn => {
             // load karnege  template agr backend mai saved nahi hai matlb naya template generate karna hai api ke through
 
             const res = await fetch(`/api/template/${id}`);
-            if (!res.ok) throw new Error(`Failed to load template: ${res.status}`);
+            if (!res.ok) {
+                const errorData = await res.json();
+                console.log(" TEMPLATE API ERROR:", errorData);
+                throw new Error(`Failed to load template: ${res.status}`);
+            }
 
             const templateRes = await res.json();
 
