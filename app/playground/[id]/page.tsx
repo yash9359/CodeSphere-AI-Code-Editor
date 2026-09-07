@@ -8,9 +8,9 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
+    ResizableHandle,
+    ResizablePanel,
+    ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
@@ -26,6 +26,8 @@ import { TemplateFileTree } from "@/modules/playground/components/playground-exp
 import { useFileExplorer } from "@/modules/playground/hooks/useFileExplorer";
 import { usePlayground } from "@/modules/playground/hooks/usePlayground";
 import { TemplateFile } from "@/modules/playground/lib/path-to-json";
+import WebContainerPreview from "@/modules/webcontainers/components/WebContainerPreview";
+import { useWebContainer } from "@/modules/webcontainers/hooks/useWebContainer";
 import { Bot, FileText, Save, Settings, X } from "lucide-react";
 
 import { useParams } from "next/navigation";
@@ -56,6 +58,16 @@ const MainPlaygroundPage = () => {
         setPlaygroundId,
         setOpenFiles,
     } = useFileExplorer();
+
+    const {
+        serverUrl,
+        destroy,
+        error: containerError,
+        instance,
+        isLoading: containerLoading,
+        writeFileSync,
+        // @ts-expect-error todo
+    } = useWebContainer({ templateData });
 
     // console.log("templateData", templateData);
     // console.log("playgroundData", playgroundData);
@@ -320,14 +332,30 @@ const MainPlaygroundPage = () => {
 
                                 <div className="flex-1">
                                     <ResizablePanelGroup orientation="horizontal">
-                                        <ResizablePanel defaultSize = {isPreviewVisible ? 50 : 100}>
-                                            
+                                        <ResizablePanel defaultSize={isPreviewVisible ? 50 : 100}>
                                             <PlaygroundEditor
-                                            activeFile={activeFile}
-                                            content={activeFile?.content || ""}
-                                            onContentChange= {()=>{}}
+                                                activeFile={activeFile}
+                                                content={activeFile?.content || ""}
+                                                onContentChange={() => { }}
                                             />
                                         </ResizablePanel>
+
+                                        {isPreviewVisible && (
+                                            <>
+                                                <ResizableHandle />
+                                                <ResizablePanel defaultSize={50}>
+                                                    <WebContainerPreview
+                                                        templateData={templateData}
+                                                        instance={instance}
+                                                        writeFileSync={writeFileSync}
+                                                        isLoading={containerLoading}
+                                                        error={containerError}
+                                                        serverUrl={serverUrl!}
+                                                        forceResetup={false}
+                                                    />
+                                                </ResizablePanel>
+                                            </>
+                                        )}
                                     </ResizablePanelGroup>
                                 </div>
                             </div>
@@ -344,8 +372,6 @@ const MainPlaygroundPage = () => {
                                 <p className="mt-2 max-w-sm text-center text-sm text-muted-foreground">
                                     Select a file from the sidebar to start editing your code.
                                 </p>
-
-
                             </div>
                         )}
                     </div>
