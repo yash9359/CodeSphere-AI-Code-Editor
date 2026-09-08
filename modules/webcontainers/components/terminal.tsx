@@ -602,40 +602,44 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
                         </div>
                     )}
 
+                    {/* Search */}
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={() =>
                             setShowSearch(!showSearch)
                         }
-                        className="h-6 w-6 p-0"
+                        className="h-6 w-6 p-0 text-zinc-500 transition-all duration-200 ease-out hover:-translate-y-1 hover:scale-110 hover:bg-emerald-400/[0.08] hover:text-emerald-400 hover:shadow-[0_6px_16px_rgba(124,255,178,0.18)] active:translate-y-0 active:scale-95 active:shadow-none"
                     >
                         <Search className="h-3 w-3" />
                     </Button>
 
+                    {/* Copy */}
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={copyTerminalContent}
-                        className="h-6 w-6 p-0"
+                        className="h-6 w-6 p-0 text-zinc-500 transition-all duration-200 ease-out hover:-translate-y-1 hover:scale-110 hover:bg-cyan-400/[0.08] hover:text-cyan-400 hover:shadow-[0_6px_16px_rgba(97,231,255,0.18)] active:translate-y-0 active:scale-95 active:shadow-none"
                     >
                         <Copy className="h-3 w-3" />
                     </Button>
 
+                    {/* Download */}
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={downloadTerminalLog}
-                        className="h-6 w-6 p-0"
+                        className="h-6 w-6 p-0 text-zinc-500 transition-all duration-200 ease-out hover:-translate-y-1 hover:scale-110 hover:bg-violet-400/[0.08] hover:text-violet-400 hover:shadow-[0_6px_16px_rgba(192,153,255,0.18)] active:translate-y-0 active:scale-95 active:shadow-none"
                     >
                         <Download className="h-3 w-3" />
                     </Button>
 
+                    {/* Delete / Clear */}
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={clearTerminal}
-                        className="h-6 w-6 p-0"
+                        className="h-6 w-6 p-0 text-zinc-500 transition-all duration-200 ease-out hover:-translate-y-1 hover:scale-110 hover:bg-red-500/[0.09] hover:text-red-400 hover:shadow-[0_6px_16px_rgba(255,80,100,0.2)] active:translate-y-0 active:scale-95 active:shadow-none"
                     >
                         <Trash2 className="h-3 w-3" />
                     </Button>
