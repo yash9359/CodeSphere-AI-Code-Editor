@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
-import type { TemplateFolder } from "@/features/playground/libs/path-to-json";
+import type { TemplateFolder } from "@/modules/playground/lib/path-to-json";
 import { transformToWebContainerFormat } from "../hooks/transformer";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -16,6 +16,7 @@ interface WebContainerPreviewProps {
     instance: WebContainer | null;
     writeFileSync: (path: string, content: string) => Promise<void>;
     forceResetup?: boolean; // Optional prop to force re-setup
+    refreshKey?: number;
 }
 
 const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
@@ -26,8 +27,10 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
     serverUrl,
     writeFileSync,
     forceResetup = false,
+    refreshKey = 0,
 }) => {
     const [previewUrl, setPreviewUrl] = useState<string>("");
+    const [previewRevision, setPreviewRevision] = useState(0);
     const [loadingState, setLoadingState] = useState({
         transforming: false,
         mounting: false,
@@ -43,6 +46,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
 
     // Ref to access terminal methods
     const terminalRef = useRef<any>(null);
+    const serverProcessRef = useRef<{ kill: () => void } | null>(null);
 
     // Reset setup state when forceResetup changes
     useEffect(() => {
@@ -86,6 +90,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
                                 terminalRef.current.writeToTerminal(`🌐 Reconnected to server at ${url}\r\n`);
                             }
                             setPreviewUrl(url);
+                            setPreviewRevision((revision) => revision + 1);
                             setLoadingState((prev) => ({
                                 ...prev,
                                 starting: false,
@@ -182,6 +187,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
                 }
 
                 const startProcess = await instance.spawn("npm", ["run", "start"]);
+                serverProcessRef.current = startProcess;
 
                 // Listen for server ready event
                 instance.on("server-ready", (port: number, url: string) => {
@@ -190,6 +196,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
                         terminalRef.current.writeToTerminal(`🌐 Server ready at ${url}\r\n`);
                     }
                     setPreviewUrl(url);
+                    setPreviewRevision((revision) => revision + 1);
                     setLoadingState((prev) => ({
                         ...prev,
                         starting: false,
@@ -232,6 +239,37 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
 
         setupContainer();
     }, [instance, templateData, isSetupComplete, isSetupInProgress]);
+
+    // Most backend starters (such as Hono) do not implement hot module
+    // replacement. Restart the process after a saved source change; the
+    // existing server-ready listener then refreshes the iframe below.
+    useEffect(() => {
+        if (!instance || !isSetupComplete || refreshKey === 0) return;
+        const webcontainer = instance;
+
+        async function restartServer() {
+            try {
+                serverProcessRef.current?.kill();
+                const process = await webcontainer.spawn("npm", ["run", "start"]);
+                serverProcessRef.current = process;
+
+                process.output.pipeTo(
+                    new WritableStream({
+                        write(data) {
+                            terminalRef.current?.writeToTerminal(data);
+                        },
+                    })
+                );
+            } catch (restartError) {
+                const message = restartError instanceof Error
+                    ? restartError.message
+                    : "Unable to restart the preview server";
+                setSetupError(message);
+            }
+        }
+
+        restartServer();
+    }, [instance, isSetupComplete, refreshKey]);
 
     // Cleanup function to prevent memory leaks
     useEffect(() => {
@@ -340,7 +378,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
                     {/* Preview */}
                     <div className="flex-1">
                         <iframe
-                            src={previewUrl}
+                            src={`${previewUrl}?preview=${previewRevision}`}
                             className="w-full h-full border-none"
                             title="WebContainer Preview"
                         />
