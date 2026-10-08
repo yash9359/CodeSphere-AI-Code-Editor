@@ -24,6 +24,7 @@ import {
 import { LoadingStep } from "@/modules/playground/components/loader";
 import PlaygroundEditor from "@/modules/playground/components/playground-editor";
 import { TemplateFileTree } from "@/modules/playground/components/playground-explorer";
+import ToggleAI from "@/modules/playground/components/toggle-ai";
 import { useFileExplorer } from "@/modules/playground/hooks/useFileExplorer";
 import { usePlayground } from "@/modules/playground/hooks/usePlayground";
 import { findFilePath } from "@/modules/playground/lib";
@@ -51,7 +52,7 @@ import { toast } from "sonner";
 const MainPlaygroundPage = () => {
     const { id } = useParams<{ id: string }>();
 
-    const [isPreviewVisible, setIsPreviewVisible] = useState(false);
+    const [isPreviewVisible, setIsPreviewVisible] = useState(true);
     const [previewRefreshKey, setPreviewRefreshKey] = useState(0);
 
     const {
@@ -525,60 +526,18 @@ const MainPlaygroundPage = () => {
                                     </TooltipContent>
                                 </Tooltip>
 
+
+
+
                                 {/* AI */}
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="
-                                        group relative size-9 overflow-hidden
-                                        rounded-lg
-                                        border-violet-500/40
-                                        bg-gradient-to-br
-                                        from-violet-500/15
-                                        via-indigo-500/10
-                                        to-cyan-500/10
-                                        text-violet-500
-                                        shadow-[0_2px_14px_rgba(139,92,246,0.15)]
-                                        transition-all duration-200
 
-                                        hover:border-violet-400/70
-                                        hover:text-violet-400
-                                        hover:shadow-[0_0_22px_rgba(139,92,246,0.30)]
-                                        hover:-translate-y-px
+                                <ToggleAI
+                                    isEnabled={false}
+                                    onToggle={() => { }}
+                                    suggestionLoading={false}
+                                />
 
-                                        active:translate-y-0
-                                        active:scale-[0.94]
-                                    "
-                                        >
-                                            <Bot
-                                                className="
-                                        relative z-10 size-4
-                                        transition-all duration-300
-                                        group-hover:scale-110
-                                        group-hover:rotate-[-5deg]
-                                    "
-                                            />
 
-                                            {/* Glow */}
-                                            <span
-                                                className="
-                                                absolute inset-0
-                                                bg-gradient-to-r
-                                                from-violet-500/0
-                                                via-violet-500/15
-                                                to-cyan-500/0
-                                                opacity-0
-                                                transition-opacity duration-300
-                                                group-hover:opacity-100
-                                            "
-                                            />
-                                        </Button>
-                                    </TooltipTrigger>
-
-                                    <TooltipContent>AI Assistant</TooltipContent>
-                                </Tooltip>
 
                                 {/* Settings */}
                                 <DropdownMenu>
@@ -795,7 +754,7 @@ const MainPlaygroundPage = () => {
                                                 activeFile={activeFile}
                                                 content={activeFile?.content || ""}
                                                 onContentChange={(value) => {
-                                                    activeFileId && updateFileContent(activeFileId,value)
+                                                    activeFileId && updateFileContent(activeFileId, value)
                                                 }}
                                             />
                                         </ResizablePanel>
