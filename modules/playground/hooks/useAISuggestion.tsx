@@ -1,8 +1,6 @@
 "use client"
 
-import { currentUser } from '@/modules/auth/actions';
-import { editor } from 'monaco-editor';
-import React, { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 
 interface AISuggestionsState {
@@ -32,138 +30,102 @@ export const UseAISuggestions = (): UseAISuggestionsReturn => {
 
     });
 
+    // Mirror of state so callbacks can read the latest values without
+    // performing side effects inside setState updaters (which React may run twice).
+    const stateRef = useRef(state);
+
+    useEffect(() => {
+        stateRef.current = state;
+    }, [state]);
+
 
     const toggleEnabled = useCallback(() => {
         setState((prev) => ({ ...prev, isEnabled: !prev.isEnabled }));
     }, []);
 
     const fetchSuggestion = useCallback(async (type: string, editor: any) => {
-        setState((currentState) => {
-            if (!currentState.isEnabled) {
-                return currentState;
+        const currentState = stateRef.current;
+
+        if (!currentState.isEnabled || currentState.isLoading || !editor) {
+            return;
+        }
+
+        const model = editor.getModel();
+        const cursorPosition = editor.getPosition();
+
+        if (!model || !cursorPosition) {
+            return;
+        }
+
+        stateRef.current = { ...currentState, isLoading: true };
+        setState((prev) => ({ ...prev, isLoading: true }));
+
+        try {
+            const payload = {
+                fileContent: model.getValue(),
+                cursorLine: cursorPosition.lineNumber - 1,
+                cursorColumn: cursorPosition.column - 1,
+                suggestionType: type
             }
-            if (!editor) {
-                return currentState
+
+            const response = await fetch("/api/code-completion", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            })
+
+            if (!response.ok) {
+                throw new Error(`API responded with status ${response.status}`);
             }
 
-            const model = editor.getModal();
-            const cursorPosition = editor.getPosition();
+            const data = await response.json();
 
-            if (!model || !cursorPosition) {
-                return currentState;
+            if (data.suggestion) {
+                const suggestionText = data.suggestion.trim();
+                setState((prev) => ({
+                    ...prev,
+                    suggestion: suggestionText,
+                    position: {
+                        line: cursorPosition.lineNumber,
+                        column: cursorPosition.column
+                    },
+                    isLoading: false
+                }))
+            } else {
+                console.warn("No suggestion received from API.");
+                setState((prev) => ({ ...prev, isLoading: false }));
             }
-            const newState = { ...currentState, isLoading: true };
 
-            (async () => {
-                try {
-                    const payload = {
-                        fileContent: model.getValue(),
-                        cursorLine: cursorPosition.lineNumber - 1,
-                        cursorColumn: cursorPosition.column - 1,
-                        suggestionType: type
-                    }
+        } catch (error) {
 
-                    const response = await fetch("/api/code-suggestions", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    })
+            console.error("Error fetching code suggestion:", error);
+            setState((prev) => ({ ...prev, isLoading: false }));
 
-                    if (!response.ok) {
-                        throw new Error(`API responded with status ${response.status}`);
-                    }
-
-                    const data = await response.json();
-
-                    if (data.suggestion) {
-                        const suggestionText = data.suggestion.trim();
-                        setState((prev) => ({
-                            ...prev,
-                            suggestion: suggestionText,
-                            position: {
-                                line: cursorPosition.lineNumber,
-                                column: cursorPosition.column
-                            },
-                            isLoading: false
-                        }))
-                    } else {
-                        console.warn("No suggestion received from API.");
-                        setState((prev) => ({ ...prev, isLoading: false }));
-                    }
-
-                } catch (error) {
-
-                    console.error("Error fetching code suggestion:", error);
-                    setState((prev) => ({ ...prev, isLoading: false }));
-
-                }
-            })();
-
-            return newState;
-        })
+        }
     }, [])
 
+    const clearState = useCallback((editor: any) => {
+        const { decoration } = stateRef.current;
+        if (editor && decoration.length > 0) {
+            editor.deltaDecorations(decoration, []);
+        }
+        setState((currentState) => ({
+            ...currentState,
+            suggestion: null,
+            position: null,
+            decoration: [],
+        }));
+    }, []);
+
+    // The editor inserts the accepted text itself; here we only reset state.
     const acceptSuggestion = useCallback(
-        (editor: any, monaco: any) => {
-            setState((currentState) => {
-                if (!currentState.suggestion || !currentState.position || !editor || !monaco) {
-                    return currentState;
-                }
-
-                const { line, column } = currentState.position;
-                const sanitizedSuggestion = currentState.suggestion.replace(/^\d+:\s*/gm, "");
-
-                editor.executeEdits("", [
-                    {
-                        range: new monaco.Range(line, column, line, column),
-                        text: sanitizedSuggestion,
-                        forceMoveMarkers: true,
-                    },
-                ]);
-
-                // Clear decorations
-                if (editor && currentState.decoration.length > 0) {
-                    editor.deltaDecorations(currentState.decoration, []);
-                }
-
-                return {
-                    ...currentState,
-                    suggestion: null,
-                    position: null,
-                    decoration: [],
-                };
-            });
-        },
-        []
+        (editor: any, _monaco: any) => clearState(editor),
+        [clearState]
     );
 
-    const rejectSuggestion = useCallback((editor: any) => {
-        setState((currentState) => {
-            if (editor && currentState.decoration.length > 0) {
-                editor.deltaDecorations(currentState.decoration, []);
-            }
-            return {
-                ...currentState,
-                suggestion: null,
-                position: null,
-                decoration: [],
-            };
-        });
-    }, []);
+    const rejectSuggestion = useCallback((editor: any) => clearState(editor), [clearState]);
 
-    const clearSuggestion = useCallback((editor: any) => {
-        setState((currentState) => {
-            if (editor && currentState.decoration.length > 0) {
-                editor.deltaDecorations(currentState.decoration, []);
-            }
-            return {
-                ...currentState,
-                suggestion: null,
-                position: null,
-                decoration: [],
-            };
-        });
-    }, []);
+    const clearSuggestion = useCallback((editor: any) => clearState(editor), [clearState]);
 
     return {
         ...state,
