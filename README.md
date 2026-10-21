@@ -1,6 +1,6 @@
 # CodeSphere — AI Code Editor
 
-A browser-based code playground with an in-editor AI assistant. Pick a starter template (React, Next.js, Vue, Angular, Express, Hono), edit it in a VS Code–style Monaco editor, run it **entirely in the browser** with WebContainers, and get inline AI code completions from a locally hosted LLM.
+A browser-based code playground with a built-in AI assistant. Pick a starter template (React, Next.js, Vue, Angular, Express, Hono), edit it in a VS Code–style Monaco editor, run it **entirely in the browser** with WebContainers, and get inline AI code completions plus an AI chat panel — powered by [Groq](https://groq.com/) (`openai/gpt-oss-20b`) and/or a local [Ollama](https://ollama.com/) model.
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
@@ -19,7 +19,9 @@ A browser-based code playground with an in-editor AI assistant. Pick a starter t
   - [Authentication Flow](#authentication-flow)
   - [Creating & Opening a Playground](#creating--opening-a-playground)
   - [Running Code in the Browser](#running-code-in-the-browser)
+  - [AI Provider Selection](#ai-provider-selection)
   - [AI Code Completion](#ai-code-completion)
+  - [AI Chat Assistant](#ai-chat-assistant)
 - [Data Model](#data-model)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
@@ -38,7 +40,9 @@ A browser-based code playground with an in-editor AI assistant. Pick a starter t
 - **Monaco editor** with tabs, file explorer, create/rename/delete files and folders
 - **In-browser runtime** — `npm install` and `npm run start` execute inside a [WebContainer](https://webcontainers.io/), with a live preview iframe
 - **Integrated terminal** powered by xterm.js
-- **AI inline suggestions** — context-aware completions from a local [Ollama](https://ollama.com/) model (`qwen2.5-coder:3b`), shown as ghost text; Tab to accept, Esc to reject
+- **AI inline suggestions** — context-aware completions shown as ghost text; Tab to accept, Esc to reject
+- **AI chat side panel** — chat with a coding assistant (chat / review / fix / optimize modes), attach code files, one-click prompt enhancement, Markdown + KaTeX rendering and copyable code blocks
+- **Pluggable AI provider** — Groq (`openai/gpt-oss-20b`), local Ollama (`qwen2.5-coder:3b`), or `auto` (Groq first, Ollama fallback), selected via `AI_PROVIDER`
 - **Auto-persisted code** — the file tree is saved to MongoDB per playground
 - **Light / dark theme** via `next-themes` and shadcn/ui components
 
@@ -56,7 +60,8 @@ A browser-based code playground with an in-editor AI assistant. Pick a starter t
 | State | Zustand, React hooks |
 | Auth | Auth.js / NextAuth v5 (GitHub, Google) |
 | Database | MongoDB via Prisma ORM |
-| AI | Ollama running `qwen2.5-coder:3b` locally |
+| AI | Groq API (`openai/gpt-oss-20b`) and/or Ollama (`qwen2.5-coder:3b`) behind a single provider layer ([lib/ai-provider.ts](lib/ai-provider.ts)) |
+| Chat rendering | react-markdown, remark-gfm, remark-math, rehype-katex, react-syntax-highlighter |
 
 ---
 
@@ -82,6 +87,8 @@ flowchart LR
         AuthAPI["/api/auth/*<br/>NextAuth"]
         TplAPI["/api/template/[id]"]
         AIAPI["/api/code-completion"]
+        ChatAPI["/api/chat"]
+        Provider["lib/ai-provider.ts<br/>(Groq / Ollama / auto)"]
         Actions["Server Actions<br/>(dashboard, playground)"]
         Starters[("codesphere-starters/<br/>template folders")]
     end
@@ -89,6 +96,7 @@ flowchart LR
     subgraph External["☁️ External Services"]
         OAuth["GitHub / Google OAuth"]
         Mongo[("MongoDB")]
+        Groq["Groq API<br/>gpt-oss-20b"]
         Ollama["Ollama<br/>qwen2.5-coder:3b"]
     end
 
@@ -96,6 +104,7 @@ flowchart LR
     UI --> AuthAPI
     UI --> TplAPI
     Monaco --> AIAPI
+    UI --> ChatAPI
     UI --> Actions
 
     AuthAPI <--> OAuth
@@ -103,7 +112,10 @@ flowchart LR
     Actions <--> Mongo
     TplAPI --> Mongo
     TplAPI --> Starters
-    AIAPI --> Ollama
+    AIAPI --> Provider
+    ChatAPI --> Provider
+    Provider --> Groq
+    Provider -. "fallback" .-> Ollama
 ```
 
 > **Note:** WebContainers need cross-origin isolation, so [next.config.ts](next.config.ts) sets `Cross-Origin-Opener-Policy: same-origin` and `Cross-Origin-Embedder-Policy: require-corp` on every route.
@@ -188,23 +200,38 @@ flowchart TD
     J --> H
 ```
 
+### AI Provider Selection
+
+Every AI route calls `generateAIText()` in [lib/ai-provider.ts](lib/ai-provider.ts) (server-only), which picks a backend based on `AI_PROVIDER`:
+
+| `AI_PROVIDER` | Behavior |
+|---|---|
+| `groq` | Always use Groq (`GROQ_API_KEY` required) |
+| `ollama` | Always use the local Ollama server |
+| `auto` *(default)* | Use Groq if `GROQ_API_KEY` is set, and fall back to Ollama on retryable errors (timeout, 408/429/5xx, unreachable, empty reply). Without a key, go straight to Ollama |
+
+Requests have per-call timeouts and one automatic retry. For `gpt-oss` models the provider sets `reasoning_effort: "low"` and a minimum 1024-token budget, since hidden reasoning tokens count against the limit.
+
 ### AI Code Completion
 
-Suggestions are requested automatically after you pause typing, or on demand with <kbd>Alt</kbd>+<kbd>\\</kbd>. The server builds a context-rich prompt and sends it to Ollama.
+Suggestions are requested automatically after you pause typing, or on demand with <kbd>Alt</kbd>+<kbd>\\</kbd>. The server builds a context-rich prompt and sends it through the AI provider layer.
 
 ```mermaid
 sequenceDiagram
     participant E as Monaco Editor
     participant H as useAISuggestion hook
     participant API as /api/code-completion
-    participant O as Ollama (localhost:11434)
+    participant P as lib/ai-provider.ts
+    participant M as Groq / Ollama
 
     E->>H: typing pause / Alt+\
     H->>API: POST {fileContent, cursorLine, cursorColumn, suggestionType}
     API->>API: analyzeCodeContext()<br/>language, framework, ±10 lines,<br/>in function/class, incomplete patterns
     API->>API: buildPrompt()
-    API->>O: POST /api/generate (qwen2.5-coder:3b)
-    O-->>API: completion text
+    API->>P: generateAIText(prompt)
+    P->>M: chat completion / generate
+    M-->>P: completion text
+    P-->>API: completion text
     API->>API: strip ``` fences & cursor markers
     API-->>H: {suggestion, context, metadata}
     H->>E: render ghost-text decoration
@@ -214,6 +241,32 @@ sequenceDiagram
         E->>E: clear suggestion
     end
 ```
+
+### AI Chat Assistant
+
+Open it from the AI dropdown in the playground toolbar (**Open Chat**). The panel ([modules/ai-chat/](modules/ai-chat/)) posts to `/api/chat`, which supports two actions:
+
+- **Chat** — `{ message, history }`: the last 10 history messages plus the new message are sent with a coding-assistant system prompt. Returns `{ response, timestamp }`.
+- **Enhance** — `{ action: "enhance", prompt, context }`: rewrites a short prompt into a more specific one; falls back to the original prompt on error.
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant C as AIChatSidePanel
+    participant API as /api/chat
+    participant P as lib/ai-provider.ts
+    participant M as Groq / Ollama
+
+    U->>C: message (+ optional file attachments, mode)
+    C->>API: POST {message, history, mode}
+    API->>P: generateAIText(system + history + message)
+    P->>M: request (Groq, Ollama fallback in auto mode)
+    M-->>P: reply
+    API-->>C: {response, timestamp}
+    C-->>U: Markdown / KaTeX / highlighted code blocks
+```
+
+`GET /api/chat` returns a status JSON, and `POST /api/ai-test` sends a one-line prompt to verify your provider configuration.
 
 ---
 
@@ -278,17 +331,20 @@ codesphere-ai-code-editor/
 │   ├── dashboard/                # Project dashboard
 │   ├── playground/[id]/          # Editor + preview + terminal
 │   └── api/
+│       ├── ai-test/              # Provider connectivity check
 │       ├── auth/[...nextauth]/   # NextAuth handlers
+│       ├── chat/                 # AI chat + prompt enhancement endpoint
 │       ├── code-completion/      # AI suggestion endpoint
 │       └── template/[id]/        # Starter template → JSON
 ├── modules/                      # Feature modules
+│   ├── ai-chat/                  # Chat side panel, code blocks, file preview
 │   ├── auth/                     # Actions, sign-in form, user button
 │   ├── dashboard/                # Project table, template picker, actions
 │   ├── home/                     # Header / footer
 │   ├── playground/               # Editor, explorer, dialogs, AI hook
 │   └── webcontainers/            # WebContainer hook, preview, terminal
 ├── components/                   # shadcn/ui + providers
-├── lib/                          # Prisma client, template paths, utils
+├── lib/                          # Prisma client, AI provider, template paths, utils
 ├── prisma/schema.prisma          # Database schema
 ├── codesphere-starters/          # Starter project templates
 ├── auth.ts / auth.config.ts      # NextAuth configuration
@@ -315,7 +371,7 @@ The template → folder mapping lives in [lib/template.ts](lib/template.ts):
 
 - **Node.js** 20+
 - **MongoDB** — a local instance or a MongoDB Atlas cluster (must be a replica set for Prisma)
-- **Ollama** — for AI suggestions ([install](https://ollama.com/download))
+- **An AI backend** (optional) — a [Groq API key](https://console.groq.com/keys) and/or [Ollama](https://ollama.com/download) running locally
 - OAuth apps on **GitHub** and/or **Google**
 - A Chromium-based browser or Firefox (WebContainers requirement)
 
@@ -329,7 +385,7 @@ npm install
 
 ### 2. Configure environment
 
-Create a `.env` file in the project root (see [Environment Variables](#environment-variables)).
+Copy [.env.example](.env.example) to `.env` and fill in the values (see [Environment Variables](#environment-variables)).
 
 ### 3. Set up the database
 
@@ -338,14 +394,20 @@ npx prisma generate
 npx prisma db push
 ```
 
-### 4. Start the AI model
+### 4. Set up an AI provider
+
+**Option A — Groq (hosted):** set `GROQ_API_KEY` in `.env` and use `AI_PROVIDER=groq` (or `auto`).
+
+**Option B — Ollama (local):**
 
 ```bash
 ollama pull qwen2.5-coder:3b
 ollama serve          # listens on http://localhost:11434
 ```
 
-> The AI endpoint is optional — if Ollama is not running, the editor still works and the endpoint returns `// AI suggestion unavailable`.
+Then set `AI_PROVIDER=ollama` (or leave `auto` with no Groq key).
+
+> AI is optional — the editor, terminal and preview work without a provider. Once the app is running, `POST /api/ai-test` verifies your setup.
 
 ### 5. Run the app
 
@@ -367,6 +429,11 @@ Open [http://localhost:3000](http://localhost:3000) and sign in.
 | `AUTH_GITHUB_SECRET` | GitHub OAuth app client secret |
 | `AUTH_GOOGLE_ID` | Google OAuth client ID |
 | `AUTH_GOOGLE_SECRET` | Google OAuth client secret |
+| `AI_PROVIDER` | `groq`, `ollama` or `auto` (default `auto`) |
+| `GROQ_API_KEY` | Groq API key (required for `groq`; enables Groq in `auto`) |
+| `GROQ_MODEL` | Groq model (default `openai/gpt-oss-20b`) |
+| `OLLAMA_BASE_URL` | Ollama server URL (default `http://localhost:11434`) |
+| `OLLAMA_MODEL` | Ollama model (default `qwen2.5-coder:3b`) |
 
 ```env
 DATABASE_URL="mongodb+srv://<user>:<password>@<cluster>/codesphere"
@@ -377,6 +444,12 @@ AUTH_GITHUB_SECRET="..."
 
 AUTH_GOOGLE_ID="..."
 AUTH_GOOGLE_SECRET="..."
+
+AI_PROVIDER="auto"
+GROQ_API_KEY="your_groq_api_key"
+GROQ_MODEL="openai/gpt-oss-20b"
+OLLAMA_BASE_URL="http://localhost:11434"
+OLLAMA_MODEL="qwen2.5-coder:3b"
 ```
 
 OAuth callback URLs for local development:
@@ -394,7 +467,7 @@ OAuth callback URLs for local development:
 | <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd> | Save all files |
 | <kbd>Alt</kbd> + <kbd>\\</kbd> | Request an AI suggestion |
 | <kbd>Tab</kbd> | Accept AI suggestion (while shown) |
-| <kbd>Esc</kbd> | Reject AI suggestion |
+| <kbd>Esc</kbd> | Reject AI suggestion / close the AI chat panel |
 
 ---
 
@@ -412,6 +485,8 @@ OAuth callback URLs for local development:
 ## Roadmap
 
 - [ ] Copy template files when duplicating a playground
-- [ ] Configurable AI provider / model (currently hard-coded to local Ollama)
+- [x] Configurable AI provider / model (Groq, Ollama, auto-fallback)
+- [ ] Wire the chat panel to the editor (active file context, insert/run code — props exist but are not connected yet)
+- [ ] Streaming chat responses
 - [ ] GitHub repository import (UI stub exists in `add-repo.tsx`)
 - [ ] Role-based features for `PREMIUM_USER`
