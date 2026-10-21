@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
+import { generateAIText } from "@/lib/ai-provider";
 interface CodeSuggestionRequest {
 
     fileContent: string
@@ -23,7 +23,12 @@ interface CodeContext {
     incompletePatterns: string[]
 }
 
+function getErrorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : "Unknown error"
+}
+
 export async function POST(request: NextRequest) {
+    console.log("[Code Completion] Request received");
     try {
 
         const body: CodeSuggestionRequest = await request.json();
@@ -31,7 +36,16 @@ export async function POST(request: NextRequest) {
         const { fileContent, cursorColumn, cursorLine, suggestionType, fileName } = body
 
         // Validate input
-        if (!fileContent || cursorLine < 0 || cursorColumn < 0 || !suggestionType) {
+        if (
+            typeof fileContent !== "string" ||
+            !fileContent ||
+            !Number.isInteger(cursorLine) ||
+            !Number.isInteger(cursorColumn) ||
+            cursorLine < 0 ||
+            cursorColumn < 0 ||
+            typeof suggestionType !== "string" ||
+            !suggestionType
+        ) {
             return NextResponse.json({ error: "Invalid input parameters" }, { status: 400 })
         }
 
@@ -53,9 +67,12 @@ export async function POST(request: NextRequest) {
         }, { status: 200 })
 
 
-    } catch (error: any) {
+    } catch (error) {
         console.error("Context analysis error:", error)
-        return NextResponse.json({ error: "Internal server error", message: error.message }, { status: 500 })
+        return NextResponse.json(
+            { error: "Internal server error", message: getErrorMessage(error) },
+            { status: 500 },
+        )
     }
 }
 
@@ -131,44 +148,45 @@ Generate suggestion:`
 /**
  * Generate suggestion using AI service
  */
+
 async function generateSuggestion(prompt: string): Promise<string> {
   try {
-    // Replace this with your actual AI service call
-    const response = await fetch("http://localhost:11434/api/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: "qwen2.5-coder:3b",
-        prompt,
-        stream: false,
-        options: {
-          temperature: 0.7,
-          max_tokens: 300,
-        },
-      }),
-    })
+    console.log("[Code Completion] Calling AI provider");
+    const response = await generateAIText(
+      [{ role: "user", content: prompt }],
+      {
+        temperature: 0.2,
+        // GPT-OSS uses part of this budget for reasoning. A 300-token cap can
+        // leave no visible completion, even when Groq returns HTTP 200.
+        maxTokens: 1024,
+        timeoutMs: 30000,
+      },
+    );
 
-    if (!response.ok) {
-      throw new Error(`AI service error: ${response.statusText}`)
-    }
+    let suggestion = response;
 
-    const data = await response.json()
-    let suggestion = data.response
-
-    // Clean up the suggestion
+    // Remove markdown code fences
     if (suggestion.includes("```")) {
-      const codeMatch = suggestion.match(/```[\w]*\n?([\s\S]*?)```/)
-      suggestion = codeMatch ? codeMatch[1].trim() : suggestion
+      const codeMatch = suggestion.match(
+        /```[\w-]*\n?([\s\S]*?)```/,
+      );
+
+      suggestion = codeMatch ? codeMatch[1].trim() : suggestion;
     }
 
-    // Remove cursor markers if present
+    // Remove cursor markers
     suggestion = suggestion.replace(/\|CURSOR\|/g, "").trim();
 
     return suggestion;
-
   } catch (error) {
-    console.error("AI generation error:", error)
-    return "// AI suggestion unavailable"
+    console.error("AI generation error:", error);
+    // An empty completion is not fatal for the editor; just show no suggestion.
+    // Errors can cross Next.js/Turbopack module boundaries, where
+    // `instanceof Error` is not reliable. Check the normalized message instead.
+    if (/empty response/i.test(getErrorMessage(error))) {
+      return "";
+    }
+    throw error;
   }
 }
 
@@ -241,12 +259,4 @@ function detectIncompletePatterns(line: string, column: number): string[] {
   if (/\.\s*$/.test(beforeCursor)) patterns.push("method-call")
 
   return patterns
-}
-
-function getLastNonEmptyLine(lines: string[], currentLine: number): string {
-  for (let i = currentLine - 1; i >= 0; i--) {
-    const line = lines[i]
-    if (line.trim() !== "") return line
-  }
-  return ""
 }
