@@ -25,7 +25,7 @@ export default async function RootLayout({
 
   return (
     <html suppressHydrationWarning lang="en" className={`${inter.className} h-full antialiased`}>
-      <body className="min-h-full">
+      <body className="min-h-full overflow-x-hidden">
         <SessionProvider session={session}>
           <ThemeProvider
             attribute="class"
