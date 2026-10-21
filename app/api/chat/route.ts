@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { generateAIText } from "@/lib/ai-provider";
 
 interface ChatMessage {
     role: "user" | "assistant"
@@ -14,6 +15,24 @@ interface EnhancePromptRequest {
     }
 }
 
+type ChatRequestBody = {
+    action?: unknown
+    prompt?: unknown
+    context?: EnhancePromptRequest["context"]
+    message?: unknown
+    history?: unknown
+}
+
+function isChatMessage(value: unknown): value is ChatMessage {
+    if (!value || typeof value !== "object") return false
+
+    const message = value as { role?: unknown; content?: unknown }
+    return (
+        (message.role === "user" || message.role === "assistant") &&
+        typeof message.content === "string"
+    )
+}
+
 async function generateAIResponse(messages: ChatMessage[]) {
     const systemPrompt = `You are an expert AI coding assistant. You help developers with:
 - Code explanations and debugging
@@ -23,58 +42,19 @@ async function generateAIResponse(messages: ChatMessage[]) {
 - Code reviews and optimizations
 
 Always provide clear, practical answers. When showing code, use proper formatting with language-specific syntax.
-Keep responses concise but comprehensive. Use code blocks with language specification when providing code examples.`
+Keep responses concise but comprehensive. Use code blocks with language specification when providing code examples.`;
 
-    const fullMessages = [{ role: "system", content: systemPrompt }, ...messages]
+    const fullMessages = [
+        { role: "system" as const, content: systemPrompt },
+        ...messages,
+    ];
 
-    const prompt = fullMessages.map((msg) => `${msg.role}: ${msg.content}`).join("\n\n")
-
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 120000)
-
-    try {
-        const response = await fetch("http://localhost:11434/api/generate", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                model: "qwen2.5-coder:3b",
-                prompt,
-                stream: false,
-                options: {
-                    temperature: 0.7,
-                    top_p: 0.9,
-                    max_tokens: 1000,
-                    num_predict: 1000,
-                    repeat_penalty: 1.1,
-                    context_length: 4096,
-                },
-            }),
-            signal: controller.signal,
-        })
-
-        clearTimeout(timeoutId)
-
-        if (!response.ok) {
-            const errorText = await response.text()
-            console.error("Error from AI model API:", errorText)
-            throw new Error(`AI model API error: ${response.status} - ${errorText}`)
-        }
-
-        const data = await response.json()
-        if (!data.response) {
-            throw new Error("No response from AI model")
-        }
-        return data.response.trim()
-    } catch (error) {
-        clearTimeout(timeoutId)
-        if ((error as Error).name === "AbortError") {
-            throw new Error("Request timeout: AI model took too long to respond")
-        }
-        console.error("AI generation error:", error)
-        throw error
-    }
+    return await generateAIText(fullMessages, {
+        temperature: 0.7,
+        // Leave room for GPT-OSS reasoning as well as the user-visible reply.
+        maxTokens: 1536,
+        timeoutMs: 120000,
+    });
 }
 
 async function enhancePrompt(request: EnhancePromptRequest) {
@@ -93,42 +73,42 @@ Enhanced prompt should:
 
 Return only the enhanced prompt, nothing else.`
 
-    try {
-        const response = await fetch("http://localhost:11434/api/generate", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
+   try {
+    const response = await generateAIText(
+        [
+            {
+                role: "user",
+                content: enhancementPrompt,
             },
-            body: JSON.stringify({
-                model: "qwen2.5-coder:3b",
-                prompt: enhancementPrompt,
-                stream: false,
-                options: {
-                    temperature: 0.3,
-                    max_tokens: 500,
-                },
-            }),
-        })
+        ],
+        {
+            temperature: 0.3,
+            maxTokens: 500,
+            timeoutMs: 30000,
+        },
+    );
 
-        if (!response.ok) {
-            throw new Error("Failed to enhance prompt")
-        }
-
-        const data = await response.json()
-        return data.response?.trim() || request.prompt
-    } catch (error) {
-        console.error("Prompt enhancement error:", error)
-        return request.prompt // Return original if enhancement fails
-    }
+    return response.trim() || request.prompt;
+} catch (error) {
+    console.error("Prompt enhancement error:", error);
+    return request.prompt;
+}
 }
 
 export async function POST(req: NextRequest) {
     try {
-        const body = await req.json()
+        const body = (await req.json()) as ChatRequestBody
 
         // Handle prompt enhancement
         if (body.action === "enhance") {
-            const enhancedPrompt = await enhancePrompt(body as EnhancePromptRequest)
+            if (typeof body.prompt !== "string" || !body.prompt.trim()) {
+                return NextResponse.json({ error: "Prompt is required" }, { status: 400 })
+            }
+
+            const enhancedPrompt = await enhancePrompt({
+                prompt: body.prompt,
+                context: body.context,
+            })
             return NextResponse.json({ enhancedPrompt })
         }
 
@@ -140,14 +120,7 @@ export async function POST(req: NextRequest) {
         }
 
         const validHistory = Array.isArray(history)
-            ? history.filter(
-                (msg: any) =>
-                    msg &&
-                    typeof msg === "object" &&
-                    typeof msg.role === "string" &&
-                    typeof msg.content === "string" &&
-                    ["user", "assistant"].includes(msg.role),
-            )
+            ? history.filter(isChatMessage)
             : []
 
         const recentHistory = validHistory.slice(-10)
