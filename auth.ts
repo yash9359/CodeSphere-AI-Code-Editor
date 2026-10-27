@@ -1,28 +1,25 @@
-import NextAuth from "next-auth"
+import NextAuth from "next-auth";
 // import {PrismaAdapter} from "@auth/prisma-adapter"
 import { db } from "./lib/db";
 import authConfig from "./auth.config";
 // import { getUserById } from "./modules/auth/actions";
 
-
-
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  callbacks:{
-    async signIn({user, account}){
-      if(!user && !account) return false;
-      const existingUser = await db.user.findUnique({
-        where:{email:user.email!}
-      })
+  callbacks: {
+    async signIn({ user, account }) {
+      if (!user?.email || !account) return false;
 
-      if(!existingUser) {
+      const existingUser = await db.user.findUnique({
+        where: { email: user.email },
+      });
+
+      if (!existingUser) {
         const newUser = await db.user.create({
           data: {
-            email: user.email!,
+            email: user.email,
             name: user.name,
             image: user.image,
-
             accounts: {
-              //@ts-ignore
               create: {
                 type: account.type,
                 provider: account.provider,
@@ -33,26 +30,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 tokenType: account.token_type,
                 scope: account.scope,
                 idToken: account.id_token,
-                sessionState: account.session_state,
-              }
-            }
-          }
-        })
-        if(!newUser) return false
+                sessionState: account.session_state == null
+                  ? null
+                  : String(account.session_state),
+              },
+            },
+          },
+        });
 
         user.id = newUser.id;
-      }
-      else {
+      } else {
         const existingAccount = await db.account.findUnique({
           where: {
             provider_providerAccountId: {
               provider: account.provider,
-              providerAccountId: account?.providerAccountId
-            }
-          }
-        })
+              providerAccountId: account.providerAccountId,
+            },
+          },
+        });
 
-        if(!existingAccount) {
+        if (!existingAccount) {
           await db.account.create({
             data: {
               userId: existingUser.id,
@@ -65,22 +62,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               tokenType: account.token_type,
               scope: account.scope,
               idToken: account.id_token,
-              //@ts-ignore
-              sessionState: account.session_state,
-            }
-          })
+              sessionState:
+                account.session_state == null
+                  ? null
+                  : String(account.session_state),
+            },
+          });
         }
+
         user.id = existingUser.id;
       }
+
       return true;
     },
-    async jwt({token}){
+
+    async jwt({ token }) {
       //  Safety check
       if (!token || !token.email) return token;
 
       //  Fetch the user from YOUR database using their email
       const dbUser = await db.user.findUnique({
-        where: { email: token.email }
+        where: { email: token.email },
       });
 
       // If user isn't in the DB yet, just return the token as-is
@@ -94,21 +96,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       return token;
     },
-    async session({session, token}) {
+    async session({ session, token }) {
       if (!token) return session;
-      if(token.sub && session.user) {
-        session.user.id = token.sub
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
       }
 
-      if(token.sub && session.user) {
-        session.user.role = token.role as any
+      if (token.sub && session.user) {
+        session.user.role = token.role as any;
       }
       return session;
-    }
+    },
   },
-  secret:process.env.AUTH_SECRET,
+  secret: process.env.AUTH_SECRET,
   // adapter:PrismaAdapter(db),
   session: { strategy: "jwt" },
-  ...authConfig
-
+  ...authConfig,
 });
