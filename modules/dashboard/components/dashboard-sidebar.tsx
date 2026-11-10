@@ -5,22 +5,14 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
     Code2,
-    Compass,
     FolderPlus,
     History,
     Home,
     LayoutDashboard,
-    Lightbulb,
-    type LucideIcon,
     Plus,
     Settings,
     Star,
-    Terminal,
-    Zap,
-    Database,
-    FlameIcon,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
     Sidebar,
     SidebarContent,
@@ -36,18 +28,8 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar"
 import Image from "next/image"
-import { IconType } from "react-icons"
-import {
-    SiReact,
-    SiNextdotjs,
-    SiExpress,
-    SiVuedotjs,
-    SiHono,
-    SiAngular,
-} from "react-icons/si"
 import { Templates } from "@prisma/client"
 
-// Define the interface for a single playground item, icon is now a string
 interface PlaygroundData {
     id: string;
     name: string;
@@ -55,15 +37,51 @@ interface PlaygroundData {
     starred: boolean;
 }
 
-
-const technologyIconMap: Record<Templates, IconType> = {
-    REACT: SiReact,
-    NEXTJS: SiNextdotjs,
-    EXPRESS: SiExpress,
-    VUE: SiVuedotjs,
-    HONO: SiHono,
-    ANGULAR: SiAngular,
+// Clean mapping without 3D glow/shadows
+const technologySvgMap: Record<Templates, { src: string; className: string }> = {
+    HONO: {
+        src: "/hono.svg",
+        className: "",
+    },
+    REACT: {
+        src: "/react.svg",
+        className: "",
+    },
+    NEXTJS: {
+        src: "/nextjs-icon.svg",
+        className: "dark:invert",
+    },
+    EXPRESS: {
+        src: "/expressjs-icon.svg",
+        className: "dark:invert",
+    },
+    VUE: {
+        src: "/vuejs-icon.svg",
+        className: "",
+    },
+    ANGULAR: {
+        src: "/angular-2.svg",
+        className: "",
+    },
 };
+
+function PlaygroundTechIcon({ template }: { template: Templates }) {
+    const tech = technologySvgMap[template];
+    if (!tech) {
+        return <Code2 className="h-4 w-4 text-muted-foreground shrink-0" />;
+    }
+    return (
+        <div className="relative flex items-center justify-center h-4 w-4 shrink-0">
+            <Image
+                src={tech.src}
+                alt={template}
+                width={16}
+                height={16}
+                className={`h-4 w-4 object-contain ${tech.className}`}
+            />
+        </div>
+    );
+}
 
 export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundData: PlaygroundData[] }) {
     const pathname = usePathname()
@@ -78,13 +96,14 @@ export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundD
                 <div className="flex items-center gap-2 px-4 py-3 justify-center">
                     <Image src={"/CodeSphereSmall.png"} alt="logo" height={60} width={100} />
                 </div>
-
             </SidebarHeader>
+
             <SidebarContent>
+                {/* Navigation Links */}
                 <SidebarGroup>
                     <SidebarMenu>
                         <SidebarMenuItem>
-                            <SidebarMenuButton asChild isActive={pathname === "/"} tooltip="Home" className="mb-2"  >
+                            <SidebarMenuButton asChild isActive={pathname === "/"} tooltip="Home" className="mb-2">
                                 <Link href="/">
                                     <Home className="h-4 w-4" />
                                     <span>Home</span>
@@ -92,17 +111,17 @@ export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundD
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                            <SidebarMenuButton asChild isActive={pathname === "/dashboard"} tooltip="Dashboard"   >
+                            <SidebarMenuButton asChild isActive={pathname === "/dashboard"} tooltip="Dashboard">
                                 <Link href="/dashboard">
                                     <LayoutDashboard className="h-4 w-4" />
                                     <span>Dashboard</span>
                                 </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
-
                     </SidebarMenu>
                 </SidebarGroup>
 
+                {/* Starred Section */}
                 <SidebarGroup>
                     <SidebarGroupLabel>
                         <Star className="h-4 w-4 mr-2" />
@@ -113,32 +132,29 @@ export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundD
                     </SidebarGroupAction>
                     <SidebarGroupContent>
                         <SidebarMenu>
-
                             {starredPlaygrounds.length === 0 && recentPlaygrounds.length === 0 ? (
                                 <div className="text-center text-muted-foreground py-4 w-full">Create your playground</div>
                             ) : (
-                                starredPlaygrounds.map((playground) => {
-                                    const IconComponent = technologyIconMap[playground.icon] || Code2;
-                                    return (
-                                        <SidebarMenuItem key={playground.id}>
-                                            <SidebarMenuButton
-                                                asChild
-                                                isActive={pathname == `/playground/${playground.id}`}
-                                                tooltip={playground.name}
-                                            >
-                                                <Link href={`/playground/${playground.id}`}>
-                                                    {IconComponent && <IconComponent className="h-4 w-4" />}
-                                                    <span>{playground.name}</span>
-                                                </Link>
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                    );
-                                })
+                                starredPlaygrounds.map((playground) => (
+                                    <SidebarMenuItem key={playground.id}>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={pathname === `/playground/${playground.id}`}
+                                            tooltip={playground.name}
+                                        >
+                                            <Link href={`/playground/${playground.id}`}>
+                                                <PlaygroundTechIcon template={playground.icon} />
+                                                <span>{playground.name}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))
                             )}
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
 
+                {/* Recent Section */}
                 <SidebarGroup>
                     <SidebarGroupLabel>
                         <History className="h-4 w-4 mr-2" />
@@ -150,23 +166,20 @@ export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundD
                     <SidebarGroupContent>
                         <SidebarMenu>
                             {starredPlaygrounds.length === 0 && recentPlaygrounds.length === 0 ? null : (
-                                recentPlaygrounds.map((playground) => {
-                                    const IconComponent = technologyIconMap[playground.icon] || Code2;
-                                    return (
-                                        <SidebarMenuItem key={playground.id}>
-                                            <SidebarMenuButton
-                                                asChild
-                                                isActive={pathname === `/playground/${playground.id}`}
-                                                tooltip={playground.name}
-                                            >
-                                                <Link href={`/playground/${playground.id}`}>
-                                                    {IconComponent && <IconComponent className="h-4 w-4" />}
-                                                    <span>{playground.name}</span>
-                                                </Link>
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                    );
-                                })
+                                recentPlaygrounds.map((playground) => (
+                                    <SidebarMenuItem key={playground.id}>
+                                        <SidebarMenuButton
+                                            asChild
+                                            isActive={pathname === `/playground/${playground.id}`}
+                                            tooltip={playground.name}
+                                        >
+                                            <Link href={`/playground/${playground.id}`}>
+                                                <PlaygroundTechIcon template={playground.icon} />
+                                                <span>{playground.name}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                ))
                             )}
                             <SidebarMenuItem>
                                 <SidebarMenuButton asChild tooltip="View all">
@@ -179,6 +192,7 @@ export function DashboardSidebar({ initialPlaygroundData }: { initialPlaygroundD
                     </SidebarGroupContent>
                 </SidebarGroup>
             </SidebarContent>
+
             <SidebarFooter>
                 <SidebarMenu>
                     <SidebarMenuItem>
