@@ -5,12 +5,12 @@ import { db } from "@/lib/db"
 import { cache } from "react"
 
 
-export const getUserById = async (id:string)=>{
+export const getUserById = async (id: string) => {
     try {
         const user = await db.user.findUnique({
-            where:{id},
-            include:{
-                accounts:true
+            where: { id },
+            include: {
+                accounts: true
             }
 
         })
@@ -19,10 +19,10 @@ export const getUserById = async (id:string)=>{
         return null;
     }
 }
-export const getAccountByUserId = async(userId:string) =>{
+export const getAccountByUserId = async (userId: string) => {
     try {
         const account = await db.account.findFirst({
-            where:{
+            where: {
                 userId
             }
         })

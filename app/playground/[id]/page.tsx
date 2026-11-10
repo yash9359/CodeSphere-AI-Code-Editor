@@ -782,14 +782,14 @@ const MainPlaygroundPage = () => {
                                                 onContentChange={(value) => {
                                                     activeFileId && updateFileContent(activeFileId, value)
                                                 }}
-                                                suggestion = {aiSuggestions.suggestion}
+                                                suggestion={aiSuggestions.suggestion}
                                                 suggestionLoading={aiSuggestions.isLoading}
                                                 suggestionPosition={aiSuggestions.position}
-                                                onAcceptSuggestion={(editor,monaco)=>
-                                                    aiSuggestions.acceptSuggestion(editor,monaco)
+                                                onAcceptSuggestion={(editor, monaco) =>
+                                                    aiSuggestions.acceptSuggestion(editor, monaco)
                                                 }
-                                                onRejectSuggestion={(editor)=>aiSuggestions.rejectSuggestion(editor)}
-                                                onTriggerSuggestion={(type,editor)=>aiSuggestions.fetchSuggestion(type,editor)}
+                                                onRejectSuggestion={(editor) => aiSuggestions.rejectSuggestion(editor)}
+                                                onTriggerSuggestion={(type, editor) => aiSuggestions.fetchSuggestion(type, editor)}
 
                                             />
                                         </ResizablePanel>

@@ -10,37 +10,37 @@ const templateCache = new Map<string, any>();
 
 // Helper function to ensure valid JSON
 function validateJsonStructure(data: unknown): boolean {
-  try {
-    JSON.parse(JSON.stringify(data)); // Ensures it's serializable
-    return true;
-  } catch (error) {
-    console.error("Invalid JSON structure:", error);
-    return false;
-  }
+    try {
+        JSON.parse(JSON.stringify(data)); // Ensures it's serializable
+        return true;
+    } catch (error) {
+        console.error("Invalid JSON structure:", error);
+        return false;
+    }
 }
 
 
-export async function GET(request:NextRequest,{params}:{params:Promise<{id:string}>}) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
 
-    const {id} = await params;
+    const { id } = await params;
 
-    if(!id){
+    if (!id) {
         return Response.json({
-            error:"Missing playground ID"
-        },{
-            status:400
+            error: "Missing playground ID"
+        }, {
+            status: 400
         });
     }
 
     const playground = await db.playground.findUnique({
-        where:{id}
+        where: { id }
     });
 
-    if(!playground){
+    if (!playground) {
         return Response.json({
-            error:"Playground not found"
-        },{
-            status:404
+            error: "Playground not found"
+        }, {
+            status: 404
         });
     }
 
