@@ -1,7 +1,8 @@
 "use server"
 
-import {auth} from "@/auth"
-import {db} from "@/lib/db"
+import { auth } from "@/auth"
+import { db } from "@/lib/db"
+import { cache } from "react"
 
 
 export const getUserById = async (id:string)=>{
@@ -33,8 +34,8 @@ export const getAccountByUserId = async(userId:string) =>{
 }
 
 
-export const currentUser = async()=>{
+export const currentUser = cache(async () => {
     const user = await auth();
 
     return user?.user;
-}
+});

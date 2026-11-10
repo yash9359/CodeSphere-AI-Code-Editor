@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { currentUser } from "@/modules/auth/actions";
 import { AwardIcon } from "lucide-react";
 import { revalidatePath } from "next/cache";
+import { cache } from "react";
 
 
 export const toggleStarMarked = async (playgroundId: string, isChecked: boolean) => {
@@ -42,19 +43,23 @@ export const toggleStarMarked = async (playgroundId: string, isChecked: boolean)
         return { success: false, error: "Failed to update problem" };
     }
 }
-export const getAllPlaygroundForUser = async () => {
+export const getAllPlaygroundForUser = cache(async () => {
     const user = await currentUser();
+
+    if (!user?.id) {
+        return [];
+    }
 
     try {
         const playground = await db.playground.findMany({
             where: {
-                userId: user?.id,
+                userId: user.id,
             },
             include: {
                 user: true,
                 Starmark: {
                     where: {
-                        userId: user?.id
+                        userId: user.id
                     },
                     select: {
                         isMarked: true
@@ -65,8 +70,9 @@ export const getAllPlaygroundForUser = async () => {
         return playground;
     } catch (error) {
         console.log(error);
+        return [];
     }
-};
+});
 
 export const createPlayground = async (data: {
     title: string;

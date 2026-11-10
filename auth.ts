@@ -76,11 +76,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return true;
     },
 
-    async jwt({ token }) {
+    async jwt({ token, user }) {
       //  Safety check
       if (!token || !token.email) return token;
 
-      //  Fetch the user from YOUR database using their email
+      // Fast path: if token already contains the user ID and role, avoid remote database query
+      if (token.sub && token.role) {
+        return token;
+      }
+
+      //  Fetch the user from database only on initial token creation or if data is missing
       const dbUser = await db.user.findUnique({
         where: { email: token.email },
       });

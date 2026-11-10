@@ -21,8 +21,32 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import dynamic from "next/dynamic";
 import { LoadingStep } from "@/modules/playground/components/loader";
-import PlaygroundEditor from "@/modules/playground/components/playground-editor";
+
+const PlaygroundEditor = dynamic(
+    () => import("@/modules/playground/components/playground-editor"),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="flex h-full w-full items-center justify-center bg-background text-xs text-muted-foreground">
+                Loading editor...
+            </div>
+        ),
+    }
+);
+
+const WebContainerPreview = dynamic(
+    () => import("@/modules/webcontainers/components/WebContainerPreview"),
+    {
+        ssr: false,
+        loading: () => (
+            <div className="flex h-full w-full items-center justify-center bg-background text-xs text-muted-foreground">
+                Loading terminal & preview...
+            </div>
+        ),
+    }
+);
 import { TemplateFileTree } from "@/modules/playground/components/playground-explorer";
 import ToggleAI from "@/modules/playground/components/toggle-ai";
 import { UseAISuggestions } from "@/modules/playground/hooks/useAISuggestion";
@@ -34,7 +58,6 @@ import {
     TemplateFolder,
     TemplateItem,
 } from "@/modules/playground/lib/path-to-json";
-import WebContainerPreview from "@/modules/webcontainers/components/WebContainerPreview";
 import { useWebContainer } from "@/modules/webcontainers/hooks/useWebContainer";
 import {
     AlertCircle,

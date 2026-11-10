@@ -12,10 +12,12 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  serverExternalPackages: ["@prisma/client", "prisma"],
+
   async headers() {
     return [
       {
-        source: "/(.*)",
+        source: "/playground/:path*",
         headers: [
           {
             key: "Cross-Origin-Opener-Policy",
@@ -29,7 +31,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  reactStrictMode:false
+  reactStrictMode: false,
 };
 
 export default nextConfig;
