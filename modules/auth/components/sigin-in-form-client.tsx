@@ -27,7 +27,7 @@ const SignInFormClient = () => {
         <Card className="w-full max-w-md border-white/10 bg-background/80 backdrop-blur-xl shadow-2xl">
             <CardHeader className="space-y-3 pb-6">
                 <CardTitle className="text-center text-3xl font-medium">
-                      Let&apos;s build together.
+                    Let&apos;s build together.
                 </CardTitle>
 
                 <CardDescription className="text-center text-base">
