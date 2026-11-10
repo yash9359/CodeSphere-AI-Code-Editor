@@ -24,70 +24,94 @@ async function handleGithubSignIn() {
 
 const SignInFormClient = () => {
     return (
-        <Card className="w-full max-w-md border-white/10 bg-background/80 backdrop-blur-xl shadow-2xl">
-            <CardHeader className="space-y-3 pb-6">
-                <CardTitle className="text-center text-3xl font-medium">
-                    Let&apos;s build together.
-                </CardTitle>
+        <div className="relative w-full max-w-md group">
 
-                <CardDescription className="text-center text-base">
-                    Sign in to continue with CodeSphere.
-                </CardDescription>
-            </CardHeader>
+            <div className="pointer-events-none absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-cyan-500/20 via-indigo-500/20 to-violet-500/20 opacity-75 blur-xl transition duration-500 group-hover:opacity-100" />
 
-            <CardContent className="space-y-4">
-                <form action={handleGoogleSignIn}>
-                    <Button
-                        type="submit"
-                        variant="outline"
-                        className="h-12 w-full rounded-xl text-base transition-all hover:scale-[1.02]"
-                    >
-                        <FcGoogle className="mr-3 h-5 w-5" />
-                        Continue with Google
-                    </Button>
-                </form>
+            <Card className="relative w-full overflow-hidden rounded-2xl border-border/60 dark:border-white/10 bg-background/80 backdrop-blur-xl shadow-2xl">
 
-                <form action={handleGithubSignIn}>
-                    <Button
-                        type="submit"
-                        className="
-              h-12
-              w-full
-              rounded-xl
-              text-base
-              bg-gradient-to-r
-              from-blue-600
-              via-indigo-600
-              to-violet-600
-              hover:opacity-90
-            "
-                    >
-                        <FaGithub className="mr-3 h-5 w-5" />
-                        Continue with GitHub
-                    </Button>
-                </form>
-            </CardContent>
+                <div className="h-1 w-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500" />
 
-            <CardFooter>
-                <p className="text-center text-xs leading-5 text-muted-foreground">
-                    By continuing, you agree to our{" "}
-                    <a
-                        href="#"
-                        className="font-medium underline underline-offset-4 hover:text-primary"
-                    >
-                        Terms of Service
-                    </a>{" "}
-                    and{" "}
-                    <a
-                        href="#"
-                        className="font-medium underline underline-offset-4 hover:text-primary"
-                    >
-                        Privacy Policy
-                    </a>
-                    .
-                </p>
-            </CardFooter>
-        </Card>
+                <CardHeader className="space-y-3 pb-6 pt-8 text-center">
+                    <CardTitle className="text-3xl font-bold tracking-tight">
+                        Let&apos;s build together.
+                    </CardTitle>
+
+                    <CardDescription className="text-base text-muted-foreground">
+                        Sign in to continue with{" "}
+                        <span className="font-medium text-foreground">
+                            CodeSphere
+                        </span>
+                        .
+                    </CardDescription>
+                </CardHeader>
+
+                <CardContent className="space-y-4 px-7">
+                    {/* Google OAuth Form */}
+                    <form action={handleGoogleSignIn}>
+                        <Button
+                            type="submit"
+                            variant="outline"
+                            className="group/btn relative h-12 w-full rounded-xl border-border/80 dark:border-white/10 bg-background/50 text-base font-medium transition-all duration-200 hover:bg-accent hover:scale-[1.01] active:scale-[0.99]"
+                        >
+                            <FcGoogle className="mr-3 h-5 w-5 transition-transform duration-200 group-hover/btn:scale-110" />
+                            <span>Continue with Google</span>
+                        </Button>
+                    </form>
+
+                    {/* GitHub OAuth Form */}
+                    <form action={handleGithubSignIn}>
+                        <Button
+                            type="submit"
+                            className="
+                                group/github
+                                relative
+                                h-12
+                                w-full
+                                rounded-xl
+                                text-base
+                                font-medium
+                                text-white
+                                bg-gradient-to-r
+                                from-blue-600
+                                via-indigo-600
+                                to-violet-600
+                                shadow-lg
+                                shadow-indigo-500/20
+                                transition-all
+                                duration-200
+                                hover:opacity-95
+                                hover:scale-[1.01]
+                                active:scale-[0.99]
+                            "
+                        >
+                            <FaGithub className="mr-3 h-5 w-5 transition-transform duration-200 group-hover/github:scale-110" />
+                            <span>Continue with GitHub</span>
+                        </Button>
+                    </form>
+                </CardContent>
+
+                <CardFooter className="mt-4 border-t border-border/50 dark:border-white/5 bg-muted/20 px-7 py-5">
+                    <p className="w-full text-center text-xs leading-5 text-muted-foreground">
+                        By continuing, you agree to our{" "}
+                        <a
+                            href="#"
+                            className="font-medium text-foreground/90 underline underline-offset-4 transition-colors hover:text-indigo-500 dark:hover:text-cyan-400"
+                        >
+                            Terms of Service
+                        </a>{" "}
+                        and{" "}
+                        <a
+                            href="#"
+                            className="font-medium text-foreground/90 underline underline-offset-4 transition-colors hover:text-indigo-500 dark:hover:text-cyan-400"
+                        >
+                            Privacy Policy
+                        </a>
+                        .
+                    </p>
+                </CardFooter>
+            </Card>
+        </div>
     );
 };
 

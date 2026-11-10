@@ -3,22 +3,28 @@ import Image from "next/image";
 
 const Page = () => {
   return (
-    <section className="mx-auto flex min-h-screen w-full max-w-7xl items-center px-6 py-12 lg:px-12">
-      <div className="grid w-full grid-cols-1 items-center gap-20 lg:grid-cols-2">
-        {/* Left */}
-        <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
-          <div className="relative">
-            <div className="absolute inset-0 rounded-full bg-cyan-500/20 blur-3xl" />
+    <section className="relative min-h-screen w-full overflow-hidden bg-background flex items-center justify-center px-6 py-12 lg:px-12">
 
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#80808015_1px,transparent_1px),linear-gradient(to_bottom,#80808015_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_90%_85%_at_50%_50%,#000_80%,transparent_100%)]" />
+      <div className="pointer-events-none absolute -top-40 -left-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-violet-500/10 blur-3xl" />
+
+      <div className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-16 lg:grid-cols-2 lg:gap-20">
+
+        <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+
+          <div className="relative group">
+            <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-violet-500/20 blur-2xl transition-all duration-500 group-hover:blur-3xl" />
             <Image
               src="/CodeSphereSmall.png"
               alt="CodeSphere Logo"
-              width={320}
-              height={320}
+              width={300}
+              height={300}
               priority
-              className="relative z-10 h-auto w-64 lg:w-80 drop-shadow-[0_0_40px_rgba(34,211,238,0.25)]"
+              className="relative z-10 h-auto w-60 lg:w-72 object-contain transition-transform duration-300 group-hover:scale-[1.02]"
             />
           </div>
+
 
           <h1
             className="
@@ -41,17 +47,19 @@ const Page = () => {
             CodeSphere
           </h1>
 
-          <p className="mt-6 max-w-md text-lg leading-8 text-muted-foreground">
+
+          <p className="mt-5 max-w-md text-lg leading-8 text-muted-foreground">
             Build the future with CodeSphere.
             <br />
-            Powered by intelligence.
-            Crafted for developers.
+            Powered by intelligence. Crafted for developers.
           </p>
         </div>
 
-        {/* Right */}
+        {/* Right: Sign-In Form Container */}
         <div className="flex justify-center lg:justify-end">
-          <SignInFormClient />
+          <div className="w-full max-w-md">
+            <SignInFormClient />
+          </div>
         </div>
       </div>
     </section>
