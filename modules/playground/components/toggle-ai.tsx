@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -48,8 +49,10 @@ const ToggleAI: React.FC<ToggleAIProps> = ({
     activeFeature,
 }) => {
     const [isChatOpen, setIsChatOpen] = useState(false);
+    const { resolvedTheme } = useTheme();
+    const activeTheme: "light" | "dark" = resolvedTheme === "light" ? "light" : "dark";
 
-   
+
     return (
         <>
             <DropdownMenu>
@@ -58,10 +61,10 @@ const ToggleAI: React.FC<ToggleAIProps> = ({
                         size="sm"
                         variant={isEnabled ? "default" : "outline"}
                         className={cn(
-                            "relative gap-2 h-8 px-3 text-sm font-medium transition-all duration-200",
+                            "relative gap-2 h-9 px-3 rounded-lg text-sm font-medium transition-all duration-200",
                             isEnabled
-                                ? "bg-zinc-900 hover:bg-zinc-800 text-zinc-50 border-zinc-800 dark:bg-zinc-50 dark:hover:bg-zinc-200 dark:text-zinc-900 dark:border-zinc-200"
-                                : "bg-background hover:bg-accent text-foreground border-border",
+                                ? "bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600 shadow-[0_2px_10px_rgba(79,70,229,0.22)] dark:bg-zinc-50 dark:hover:bg-zinc-200 dark:text-zinc-900 dark:border-zinc-200 dark:shadow-none"
+                                : "bg-card/80 dark:bg-background hover:bg-accent text-foreground border-border",
                             suggestionLoading && "opacity-75"
                         )}
                         onClick={(e) => e.preventDefault()}
@@ -73,9 +76,9 @@ const ToggleAI: React.FC<ToggleAIProps> = ({
                         )}
                         <span>AI</span>
                         {isEnabled ? (
-                            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                            <div className="w-2 h-2 bg-emerald-300 dark:bg-green-500 rounded-full animate-pulse" />
                         ) : (
-                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                            <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
                         )}
                     </Button>
                 </DropdownMenuTrigger>
@@ -90,7 +93,7 @@ const ToggleAI: React.FC<ToggleAIProps> = ({
                             className={cn(
                                 "text-xs",
                                 isEnabled
-                                    ? "bg-zinc-900 text-zinc-50 border-zinc-800 dark:bg-zinc-50 dark:text-zinc-900 dark:border-zinc-200"
+                                    ? "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-zinc-50 dark:text-zinc-900 dark:border-zinc-200"
                                     : "bg-muted text-muted-foreground"
                             )}
                         >
@@ -138,11 +141,11 @@ const ToggleAI: React.FC<ToggleAIProps> = ({
                             <div className={cn(
                                 "w-8 h-4 rounded-full border transition-all duration-200 relative",
                                 isEnabled
-                                    ? "bg-zinc-900 border-zinc-900 dark:bg-zinc-50 dark:border-zinc-50"
+                                    ? "bg-indigo-600 border-indigo-600 dark:bg-zinc-50 dark:border-zinc-50"
                                     : "bg-muted border-border"
                             )}>
                                 <div className={cn(
-                                    "w-3 h-3 rounded-full bg-background transition-all duration-200 absolute top-0.5",
+                                    "w-3 h-3 rounded-full bg-white dark:bg-zinc-900 shadow-2xs transition-all duration-200 absolute top-0.5",
                                     isEnabled ? "left-4" : "left-0.5"
                                 )} />
                             </div>
@@ -177,7 +180,7 @@ const ToggleAI: React.FC<ToggleAIProps> = ({
                 // activeFileContent={activeFile?.content}
                 activeFileLanguage="TypeScript" // Assuming TypeScript as the language
                 // cursorPosition={cursorPosition}
-                theme="dark"
+                theme={activeTheme}
             />
         </>
     );

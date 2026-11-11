@@ -167,24 +167,36 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
 
   if (inline) {
     return (
-      <code className="bg-zinc-800/60 text-zinc-200 px-1.5 py-0.5 rounded text-sm font-mono border border-zinc-700/50">
+      <code className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-sm text-foreground">
         {children}
       </code>
     )
   }
+
+  const isDark = theme === "dark"
+  const headerButtonClass = isDark
+    ? "h-7 w-7 p-0 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/50 transition-colors"
+    : "h-7 w-7 p-0 text-slate-500 hover:text-slate-900 hover:bg-slate-200/70 transition-colors"
 
   const lineCount = children.split("\n").length
   const shouldShowControls = lineCount > 3
 
   return (
     <TooltipProvider>
-      <div className={cn("relative group my-4", isFullscreen && "fixed inset-4 z-50 bg-zinc-950 rounded-lg")}>
+      <div className={cn("relative group my-4", isFullscreen && "fixed inset-4 z-50 rounded-lg border border-border bg-background p-3 shadow-2xl")}>
         {/* Header with enhanced controls */}
-        <div className="flex items-center justify-between bg-zinc-800/90 backdrop-blur-sm px-4 py-2.5 rounded-t-lg border border-zinc-700/50">
+        <div
+          className={cn(
+            "flex items-center justify-between backdrop-blur-sm px-4 py-2.5 rounded-t-lg border",
+            isDark
+              ? "bg-zinc-800/90 border-zinc-700/50"
+              : "bg-slate-100/95 border-slate-200",
+          )}
+        >
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-zinc-400" />
-              <span className="text-xs text-zinc-300 font-medium tracking-wide">
+              <FileText className={cn("h-4 w-4", isDark ? "text-zinc-400" : "text-slate-500")} />
+              <span className={cn("text-xs font-medium tracking-wide", isDark ? "text-zinc-300" : "text-slate-700")}>
                 {getLanguageDisplayName(language)}
               </span>
             </div>
@@ -211,8 +223,8 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
                     className={cn(
                       "h-7 w-7 p-0 transition-colors",
                       feedback === "up"
-                        ? "text-green-400 hover:text-green-300"
-                        : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/50",
+                        ? "text-emerald-600 dark:text-green-400 hover:text-emerald-500 dark:hover:text-green-300"
+                        : headerButtonClass,
                     )}
                     onClick={() => handleFeedback("up")}
                   >
@@ -230,8 +242,8 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
                     className={cn(
                       "h-7 w-7 p-0 transition-colors",
                       feedback === "down"
-                        ? "text-red-400 hover:text-red-300"
-                        : "text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/50",
+                        ? "text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300"
+                        : headerButtonClass,
                     )}
                     onClick={() => handleFeedback("down")}
                   >
@@ -249,7 +261,7 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/50 transition-colors"
+                      className={headerButtonClass}
                       onClick={() => setShowNumbers(!showNumbers)}
                     >
                       {showNumbers ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -263,7 +275,7 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-7 w-7 p-0 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/50 transition-colors"
+                      className={headerButtonClass}
                       onClick={() => setIsFullscreen(!isFullscreen)}
                     >
                       {isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
@@ -278,7 +290,7 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 w-7 p-0 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/50 transition-colors"
+                        className={headerButtonClass}
                         onClick={() => setCollapsed(!collapsed)}
                       >
                         <MoreHorizontal className="h-3.5 w-3.5" />
@@ -296,7 +308,7 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 w-7 p-0 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/50 transition-colors"
+                  className={headerButtonClass}
                   onClick={downloadCode}
                 >
                   <Download className="h-3.5 w-3.5" />
@@ -311,7 +323,7 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 w-7 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 transition-colors"
+                    className="h-7 w-7 p-0 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-500/10 transition-colors"
                     onClick={() => onInsert(children)}
                   >
                     <Insert className="h-3.5 w-3.5" />
@@ -327,7 +339,7 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 w-7 p-0 text-green-400 hover:text-green-300 hover:bg-green-500/10 transition-colors"
+                    className="h-7 w-7 p-0 text-emerald-600 dark:text-green-400 hover:text-emerald-700 dark:hover:text-green-300 hover:bg-emerald-500/10 transition-colors"
                     onClick={() => onRun(children, language)}
                   >
                     <Play className="h-3.5 w-3.5" />
@@ -342,10 +354,10 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 w-7 p-0 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/50 transition-colors"
+                  className={headerButtonClass}
                   onClick={copyToClipboard}
                 >
-                  {copied ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copied ? <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Copy code</TooltipContent>
@@ -357,7 +369,7 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-7 w-7 p-0 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/50 transition-colors"
+                  className={headerButtonClass}
                 >
                   <MoreHorizontal className="h-3.5 w-3.5" />
                 </Button>
@@ -378,10 +390,15 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
         </div>
 
         {/* Code content */}
-        <div className="border-x border-b border-zinc-700/50 rounded-b-lg overflow-hidden bg-[#1e1e1e] relative">
+        <div
+          className={cn(
+            "border-x border-b rounded-b-lg overflow-hidden relative",
+            isDark ? "border-zinc-700/50 bg-[#1e1e1e]" : "border-slate-200 bg-[#f8fafc]",
+          )}
+        >
           <SyntaxHighlighter
             language={language}
-            style={theme === "dark" ? vscDarkPlus : vs}
+            style={isDark ? vscDarkPlus : vs}
             showLineNumbers={showNumbers && lineCount > 1}
             wrapLines={true}
             wrapLongLines={true}
@@ -396,7 +413,7 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
               overflow: "auto",
             }}
             lineNumberStyle={{
-              color: "#6b7280",
+              color: isDark ? "#6b7280" : "#94a3b8",
               fontSize: "12px",
               paddingRight: "16px",
               userSelect: "none",
@@ -406,12 +423,20 @@ export const EnhancedCodeBlock: React.FC<EnhancedCodeBlockProps> = ({
           </SyntaxHighlighter>
 
           {collapsed && lineCount > 20 && (
-            <div className="absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t from-[#1e1e1e] to-transparent flex items-end justify-center pb-2">
+            <div
+              className={cn(
+                "absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t to-transparent flex items-end justify-center pb-2",
+                isDark ? "from-[#1e1e1e]" : "from-[#f8fafc]",
+              )}
+            >
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setCollapsed(false)}
-                className="text-xs text-zinc-400 hover:text-zinc-200"
+                className={cn(
+                  "text-xs",
+                  isDark ? "text-zinc-400 hover:text-zinc-200" : "text-slate-600 hover:text-slate-900",
+                )}
               >
                 Show {lineCount - 10} more lines
               </Button>

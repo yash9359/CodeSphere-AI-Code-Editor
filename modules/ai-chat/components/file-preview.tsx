@@ -43,6 +43,7 @@ interface EnhancedFilePreviewProps {
   onExpand?: () => void
   onInsert?: (code: string) => void
   searchable?: boolean
+  theme?: "dark" | "light"
 }
 
 export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
@@ -52,6 +53,7 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
   onExpand,
   onInsert,
   searchable = true,
+  theme = "dark",
 }) => {
   const [isExpanded, setIsExpanded] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -61,37 +63,37 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
     const ext = name.split(".").pop()?.toLowerCase()
 
     if (type === "image" || ["png", "jpg", "jpeg", "gif", "svg", "webp"].includes(ext || "")) {
-      return <ImageIcon className="h-4 w-4 text-blue-400" />
+      return <ImageIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
     }
     if (type === "video" || ["mp4", "avi", "mov", "wmv", "flv"].includes(ext || "")) {
-      return <Video className="h-4 w-4 text-purple-400" />
+      return <Video className="h-4 w-4 text-purple-600 dark:text-purple-400" />
     }
     if (type === "audio" || ["mp3", "wav", "flac", "aac"].includes(ext || "")) {
-      return <Music className="h-4 w-4 text-green-400" />
+      return <Music className="h-4 w-4 text-green-600 dark:text-green-400" />
     }
     if (type === "archive" || ["zip", "rar", "7z", "tar", "gz"].includes(ext || "")) {
-      return <Archive className="h-4 w-4 text-orange-400" />
+      return <Archive className="h-4 w-4 text-orange-600 dark:text-orange-400" />
     }
     if (type === "code" || ["js", "ts", "jsx", "tsx", "py", "java", "cpp"].includes(ext || "")) {
-      return <Code2 className="h-4 w-4 text-emerald-400" />
+      return <Code2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
     }
-    return <FileText className="h-4 w-4 text-zinc-400" />
+    return <FileText className="h-4 w-4 text-muted-foreground" />
   }
 
   const getFileTypeColor = (type: string) => {
     switch (type) {
       case "code":
-        return "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+        return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20"
       case "image":
-        return "bg-blue-500/10 text-blue-400 border-blue-500/20"
+        return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20"
       case "video":
-        return "bg-purple-500/10 text-purple-400 border-purple-500/20"
+        return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20"
       case "audio":
-        return "bg-green-500/10 text-green-400 border-green-500/20"
+        return "bg-green-50 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20"
       case "archive":
-        return "bg-orange-500/10 text-orange-400 border-orange-500/20"
+        return "bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-500/10 dark:text-orange-400 dark:border-orange-500/20"
       default:
-        return "bg-zinc-500/10 text-zinc-400 border-zinc-500/20"
+        return "bg-muted text-muted-foreground border-border"
     }
   }
 
@@ -138,11 +140,11 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 bg-zinc-800/50 rounded-lg p-2 border border-zinc-700/50 group hover:bg-zinc-800/70 transition-colors">
+      <div className="flex items-center gap-2 bg-card dark:bg-zinc-800/50 rounded-lg p-2 border border-border group hover:bg-muted/70 dark:hover:bg-zinc-800/70 transition-colors">
         {getFileIcon(file.type, file.name)}
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-zinc-200 truncate">{file.name}</div>
-          <div className="flex items-center gap-2 text-xs text-zinc-500">
+          <div className="text-sm font-medium text-foreground truncate">{file.name}</div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Badge variant="outline" className={cn("text-xs", getFileTypeColor(file.type))}>
               {file.language}
             </Badge>
@@ -157,7 +159,7 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={onExpand}
-                  className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-200"
+                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                 >
                   <Eye className="h-3 w-3" />
                 </Button>
@@ -172,7 +174,7 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={copyToClipboard}
-                  className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-200"
+                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                 >
                   <Copy className="h-3 w-3" />
                 </Button>
@@ -180,7 +182,7 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
               <TooltipContent>Copy content</TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <Button variant="ghost" size="sm" onClick={onRemove} className="h-6 w-6 p-0 text-zinc-400 hover:text-red-400">
+          <Button variant="ghost" size="sm" onClick={onRemove} className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive">
             <X className="h-3 w-3" />
           </Button>
         </div>
@@ -190,14 +192,14 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-      <div className="border border-zinc-700/50 rounded-lg overflow-hidden bg-zinc-900/50">
+      <div className="border border-border rounded-lg overflow-hidden bg-card/80 dark:bg-zinc-900/50">
         <CollapsibleTrigger asChild>
-          <div className="flex items-center justify-between p-3 bg-zinc-800/50 hover:bg-zinc-800/70 cursor-pointer transition-colors">
+          <div className="flex items-center justify-between p-3 bg-muted/50 dark:bg-zinc-800/50 hover:bg-muted/80 dark:hover:bg-zinc-800/70 cursor-pointer transition-colors">
             <div className="flex items-center gap-3">
               {getFileIcon(file.type, file.name)}
               <div>
-                <div className="text-sm font-medium text-zinc-200">{file.name}</div>
-                <div className="flex items-center gap-2 text-xs text-zinc-500">
+                <div className="text-sm font-medium text-foreground">{file.name}</div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Badge variant="outline" className={cn("text-xs", getFileTypeColor(file.type))}>
                     {file.language}
                   </Badge>
@@ -218,7 +220,7 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
                           e.stopPropagation()
                           setShowSearch(!showSearch)
                         }}
-                        className="h-7 w-7 p-0 text-zinc-400 hover:text-zinc-200"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-foreground"
                       >
                         <Search className="h-3 w-3" />
                       </Button>
@@ -228,9 +230,9 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
                 </TooltipProvider>
               )}
               {isExpanded ? (
-                <ChevronDown className="h-4 w-4 text-zinc-400" />
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
               ) : (
-                <ChevronRight className="h-4 w-4 text-zinc-400" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
               )}
               <Button
                 variant="ghost"
@@ -239,7 +241,7 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
                   e.stopPropagation()
                   onRemove()
                 }}
-                className="h-7 w-7 p-0 text-zinc-400 hover:text-red-400"
+                className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -249,37 +251,38 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
 
         <CollapsibleContent>
           {showSearch && (
-            <div className="p-3 border-b border-zinc-700/50 bg-zinc-800/30">
+            <div className="p-3 border-b border-border bg-muted/40 dark:bg-zinc-800/30">
               <Input
                 placeholder="Search in file..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-8 bg-zinc-900/50 border-zinc-700/50"
+                className="h-8 bg-background border-border"
               />
             </div>
           )}
 
-          <div className="border-t border-zinc-700/50">
+          <div className="border-t border-border">
             {file.type === "code" ? (
               <EnhancedCodeBlock
                 className={`language-${file.language}`}
                 onInsert={onInsert}
                 fileName={file.name}
                 showLineNumbers={true}
+                theme={theme}
               >
                 {filteredContent}
               </EnhancedCodeBlock>
             ) : file.type === "image" ? (
               <div className="p-4 text-center">
-                <div className="text-sm text-zinc-400 mb-2">Image Preview</div>
-                <div className="bg-zinc-800 rounded p-4">
-                  <ImageIcon className="h-16 w-16 text-zinc-500 mx-auto" />
-                  <p className="text-xs text-zinc-500 mt-2">Image preview not available</p>
+                <div className="text-sm text-muted-foreground mb-2">Image Preview</div>
+                <div className="bg-muted rounded p-4">
+                  <ImageIcon className="h-16 w-16 text-muted-foreground mx-auto" />
+                  <p className="text-xs text-muted-foreground mt-2">Image preview not available</p>
                 </div>
               </div>
             ) : (
               <div className="p-4">
-                <pre className="text-sm text-zinc-300 whitespace-pre-wrap font-mono bg-zinc-900/50 p-3 rounded border border-zinc-700/50 max-h-60 overflow-auto">
+                <pre className="text-sm text-foreground whitespace-pre-wrap font-mono bg-muted/50 p-3 rounded border border-border max-h-60 overflow-auto">
                   {filteredContent}
                 </pre>
               </div>
@@ -287,8 +290,8 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
           </div>
 
           {/* File actions */}
-          <div className="p-3 border-t border-zinc-700/50 bg-zinc-800/30 flex items-center justify-between">
-            <div className="text-xs text-zinc-500">
+          <div className="p-3 border-t border-border bg-muted/40 dark:bg-zinc-800/30 flex items-center justify-between">
+            <div className="text-xs text-muted-foreground">
               {searchTerm && `Found ${filteredContent.split("\n").length} matching lines`}
             </div>
             <div className="flex items-center gap-2">
@@ -305,7 +308,7 @@ export const EnhancedFilePreview: React.FC<EnhancedFilePreviewProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => onInsert(file.content)}
-                  className="h-7 px-2 text-xs text-blue-400 hover:text-blue-300"
+                  className="h-7 px-2 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
                 >
                   Insert
                 </Button>

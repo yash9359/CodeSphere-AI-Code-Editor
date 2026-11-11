@@ -93,7 +93,7 @@ interface ChatMessage {
 
 type ChatMode = "chat" | "review" | "fix" | "optimize";
 
-const subscribeToEnvironment = () => () => {};
+const subscribeToEnvironment = () => () => { };
 const getClientSnapshot = () => true;
 const getServerSnapshot = () => false;
 
@@ -121,19 +121,19 @@ const MessageTypeIndicator: React.FC<{
     const getTypeConfig = (type?: string) => {
         switch (type) {
             case "code_review":
-                return { icon: Code, color: "text-blue-400", label: "Code Review" };
+                return { icon: Code, color: "text-blue-600 dark:text-blue-400", label: "Code Review" };
             case "suggestion":
                 return {
                     icon: Sparkles,
-                    color: "text-purple-400",
+                    color: "text-purple-600 dark:text-purple-400",
                     label: "Suggestion",
                 };
             case "error_fix":
-                return { icon: RefreshCw, color: "text-red-400", label: "Error Fix" };
+                return { icon: RefreshCw, color: "text-red-600 dark:text-red-400", label: "Error Fix" };
             case "optimization":
-                return { icon: Zap, color: "text-yellow-400", label: "Optimization" };
+                return { icon: Zap, color: "text-amber-600 dark:text-yellow-400", label: "Optimization" };
             default:
-                return { icon: MessageSquare, color: "text-zinc-400", label: "Chat" };
+                return { icon: MessageSquare, color: "text-muted-foreground", label: "Chat" };
         }
     };
 
@@ -148,7 +148,7 @@ const MessageTypeIndicator: React.FC<{
                     {config.label}
                 </span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-zinc-500">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 {model && <span>{model}</span>}
                 {tokens && <span>{tokens} tokens</span>}
             </div>
@@ -162,7 +162,8 @@ const CodeSuggestionCard: React.FC<{
     onCopy: () => void;
     onRun?: (code: string, language: string) => void;
     activeFileName?: string;
-}> = ({ suggestion, onInsert, onCopy, onRun, activeFileName }) => {
+    theme?: "dark" | "light";
+}> = ({ suggestion, onInsert, onCopy, onRun, activeFileName, theme = "dark" }) => {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = async () => {
@@ -174,27 +175,27 @@ const CodeSuggestionCard: React.FC<{
     const getCategoryColor = (category?: string) => {
         switch (category) {
             case "optimization":
-                return "bg-yellow-500/10 text-yellow-400 border-yellow-500/20";
+                return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-yellow-500/10 dark:text-yellow-400 dark:border-yellow-500/20";
             case "bug_fix":
-                return "bg-red-500/10 text-red-400 border-red-500/20";
+                return "bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20";
             case "feature":
-                return "bg-green-500/10 text-green-400 border-green-500/20";
+                return "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20";
             case "refactor":
-                return "bg-blue-500/10 text-blue-400 border-blue-500/20";
+                return "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-400 dark:border-blue-500/20";
             case "security":
-                return "bg-purple-500/10 text-purple-400 border-purple-500/20";
+                return "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-400 dark:border-purple-500/20";
             default:
-                return "bg-zinc-500/10 text-zinc-400 border-zinc-500/20";
+                return "bg-muted text-muted-foreground border-border";
         }
     };
 
     return (
-        <div className="border border-zinc-700/50 rounded-lg overflow-hidden bg-zinc-900/30 my-3 group hover:bg-zinc-900/50 transition-colors">
-            <div className="p-3 bg-zinc-800/30">
+        <div className="border border-border rounded-lg overflow-hidden bg-card/80 dark:bg-zinc-900/30 my-3 group hover:bg-muted/40 dark:hover:bg-zinc-900/50 transition-colors">
+            <div className="p-3 bg-muted/40 dark:bg-zinc-800/30">
                 <div className="flex items-start justify-between gap-3">
                     <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                            <h4 className="text-sm font-medium text-zinc-200">
+                            <h4 className="text-sm font-medium text-foreground">
                                 {suggestion.title}
                             </h4>
                             {suggestion.category && (
@@ -214,11 +215,11 @@ const CodeSuggestionCard: React.FC<{
                                 </Badge>
                             )}
                         </div>
-                        <p className="text-xs text-zinc-400 mb-2">
+                        <p className="text-xs text-muted-foreground mb-2">
                             {suggestion.description}
                         </p>
                         {suggestion.fileName && (
-                            <div className="text-xs text-zinc-500">
+                            <div className="text-xs text-muted-foreground">
                                 Target: {suggestion.fileName}
                                 {suggestion.insertPosition && (
                                     <span className="ml-2">
@@ -236,7 +237,7 @@ const CodeSuggestionCard: React.FC<{
                                     variant="ghost"
                                     size="sm"
                                     onClick={handleCopy}
-                                    className="h-7 px-2 text-zinc-400 hover:text-zinc-200"
+                                    className="h-7 px-2 text-muted-foreground hover:text-foreground"
                                 >
                                     {copied ? (
                                         <Check className="h-3 w-3" />
@@ -261,7 +262,7 @@ const CodeSuggestionCard: React.FC<{
                                             onClick={() =>
                                                 onRun(suggestion.code, suggestion.language)
                                             }
-                                            className="h-7 px-2 text-green-400 hover:text-green-300 hover:bg-green-500/10"
+                                            className="h-7 px-2 text-emerald-600 dark:text-green-400 hover:text-emerald-700 dark:hover:text-green-300 hover:bg-emerald-500/10"
                                         >
                                             <Terminal className="h-3 w-3" />
                                             <span className="ml-1 text-xs">Run</span>
@@ -277,7 +278,7 @@ const CodeSuggestionCard: React.FC<{
                                     variant="ghost"
                                     size="sm"
                                     onClick={onInsert}
-                                    className="h-7 px-2 text-blue-400 hover:text-blue-300 hover:bg-blue-500/10"
+                                    className="h-7 px-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-500/10"
                                     disabled={!activeFileName}
                                 >
                                     <Plus className="h-3 w-3" />
@@ -294,12 +295,13 @@ const CodeSuggestionCard: React.FC<{
                 </div>
             </div>
 
-            <div className="border-t border-zinc-700/50">
+            <div className="border-t border-border">
                 <EnhancedCodeBlock
                     className={`language-${suggestion.language}`}
                     onInsert={() => onInsert()}
                     onRun={onRun}
                     fileName={suggestion.fileName}
+                    theme={theme}
                 >
                     {suggestion.code}
                 </EnhancedCodeBlock>
@@ -890,7 +892,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                 {/* Backdrop */}
                 <div
                     className={cn(
-                        "fixed inset-0 bg-black/20 z-40 transition-opacity duration-300",
+                        "fixed inset-0 bg-slate-950/25 dark:bg-black/40 backdrop-blur-[1px] z-40 transition-opacity duration-300",
                         isOpen ? "opacity-100" : "invisible opacity-0 pointer-events-none"
                     )}
                     onClick={onClose}
@@ -899,7 +901,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                 {/* Side Panel */}
                 <div
                     className={cn(
-                        "fixed right-0 top-0 h-dvh w-full max-w-full overflow-x-hidden sm:w-[40rem] lg:w-[44rem] bg-zinc-950 border-l border-zinc-800 z-50 flex flex-col transition-transform duration-300 ease-out shadow-2xl",
+                        "fixed right-0 top-0 h-dvh w-full max-w-full overflow-x-hidden sm:w-[40rem] lg:w-[44rem] bg-background text-foreground border-l border-border z-50 flex flex-col transition-transform duration-300 ease-out shadow-2xl",
                         isOpen
                             ? "visible translate-x-0 opacity-100"
                             : "invisible pointer-events-none translate-x-full opacity-0"
@@ -914,10 +916,10 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                 >
                     {/* Drag overlay */}
                     {dragOver && (
-                        <div className="absolute inset-0 bg-blue-500/20 border-2 border-dashed border-blue-400 z-10 flex items-center justify-center">
+                        <div className="absolute inset-0 bg-blue-500/15 border-2 border-dashed border-blue-500 z-10 flex items-center justify-center backdrop-blur-[1px]">
                             <div className="text-center">
-                                <FileText className="h-12 w-12 text-blue-400 mx-auto mb-2" />
-                                <p className="text-blue-400 font-medium">
+                                <FileText className="h-12 w-12 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
+                                <p className="text-blue-700 dark:text-blue-400 font-medium">
                                     Drop files here to attach
                                 </p>
                             </div>
@@ -925,10 +927,10 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                     )}
 
                     {/* Enhanced Header */}
-                    <div className="shrink-0 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-sm">
+                    <div className="shrink-0 border-b border-border bg-card/90 dark:bg-zinc-900/80 backdrop-blur-sm">
                         <div className="flex items-center justify-between gap-3 p-4 sm:p-6">
                             <div className="flex items-center gap-3">
-                                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border">
+                                <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-muted/40">
                                     <Image
                                         src="/CodeSphereSmall.png"
                                         alt="CodeSphere logo"
@@ -938,10 +940,10 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                     />
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-semibold text-zinc-100">
+                                    <h2 className="text-lg font-semibold text-foreground">
                                         Enhanced AI Assistant
                                     </h2>
-                                    <p className="text-sm text-zinc-400">
+                                    <p className="text-sm text-muted-foreground">
                                         {activeFileName
                                             ? `Working on ${activeFileName}`
                                             : "No active file"}{" "}
@@ -957,7 +959,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={addCurrentFileAsContext}
-                                                className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                                                className="text-muted-foreground hover:text-foreground hover:bg-muted"
                                             >
                                                 <Plus className="h-4 w-4 mr-1" />
                                                 Add Current File
@@ -971,7 +973,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => fileInputRef.current?.click()}
-                                    className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                                    className="text-muted-foreground hover:text-foreground hover:bg-muted"
                                 >
                                     <Paperclip className="h-4 w-4 mr-1" />
                                     Attach
@@ -982,7 +984,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                                            className="text-muted-foreground hover:text-foreground hover:bg-muted"
                                         >
                                             <Settings className="h-4 w-4" />
                                         </Button>
@@ -1015,7 +1017,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                     variant="ghost"
                                     size="sm"
                                     onClick={onClose}
-                                    className="h-8 w-8 p-0 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800"
+                                    className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted"
                                 >
                                     <X className="h-4 w-4" />
                                 </Button>
@@ -1060,12 +1062,12 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
 
                                 <div className="flex items-center gap-2 self-end sm:self-auto">
                                     <div className="relative">
-                                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-zinc-500" />
+                                        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
                                         <Input
                                             placeholder="Search messages..."
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="pl-7 h-8 w-40 bg-zinc-800/50 border-zinc-700/50"
+                                            className="pl-7 h-8 w-40 bg-background border-border"
                                         />
                                     </div>
 
@@ -1105,17 +1107,17 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                     </div>
 
                     {/* Messages Container */}
-                    <div className="flex-1 overflow-y-auto bg-zinc-950">
+                    <div className="flex-1 overflow-y-auto bg-background">
                         <div className="space-y-6 p-4 sm:p-6">
                             {filteredMessages.length === 0 && !isLoading && (
-                                <div className="text-center text-zinc-500 py-16">
-                                    <div className="relative w-16 h-16 border rounded-full flex flex-col justify-center items-center mx-auto mb-4">
-                                        <Brain className="h-8 w-8 text-zinc-400" />
+                                <div className="text-center text-muted-foreground py-16">
+                                    <div className="relative w-16 h-16 border border-border bg-card shadow-2xs rounded-full flex flex-col justify-center items-center mx-auto mb-4">
+                                        <Brain className="h-8 w-8 text-primary" />
                                     </div>
-                                    <h3 className="text-xl font-semibold mb-3 text-zinc-300">
+                                    <h3 className="text-xl font-semibold mb-3 text-foreground">
                                         Enhanced AI Assistant
                                     </h3>
-                                    <p className="text-zinc-400 max-w-md mx-auto leading-relaxed mb-6">
+                                    <p className="text-muted-foreground max-w-md mx-auto leading-relaxed mb-6">
                                         Advanced AI coding assistant with file attachments, code
                                         execution, smart suggestions, and comprehensive analysis
                                         capabilities.
@@ -1132,7 +1134,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                             <button
                                                 key={suggestion}
                                                 onClick={() => setInput(suggestion)}
-                                                className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm text-zinc-300 transition-colors text-left"
+                                                className="px-3 py-2.5 bg-card hover:bg-accent border border-border rounded-lg text-sm text-foreground/90 shadow-2xs dark:shadow-none transition-colors text-left"
                                             >
                                                 {suggestion}
                                             </button>
@@ -1150,17 +1152,17 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                         )}
                                     >
                                         {msg.role === "assistant" && (
-                                            <div className="relative w-10 h-10 border rounded-full flex flex-col justify-center items-center">
-                                                <Brain className="h-5 w-5 text-zinc-400" />
+                                            <div className="relative w-9 h-9 shrink-0 border border-border bg-card shadow-2xs rounded-full flex flex-col justify-center items-center">
+                                                <Brain className="h-4 w-4 text-primary" />
                                             </div>
                                         )}
 
                                         <div
                                             className={cn(
-                                                "max-w-[85%] rounded-xl shadow-sm",
+                                                "max-w-[85%] rounded-xl shadow-2xs dark:shadow-none",
                                                 msg.role === "user"
-                                                    ? "bg-zinc-900/70 text-white p-4 rounded-br-md"
-                                                    : "bg-zinc-900/80 backdrop-blur-sm text-zinc-100 p-5 rounded-bl-md border border-zinc-800/50"
+                                                    ? "bg-blue-600/10 border border-blue-200/80 text-foreground dark:bg-zinc-900/70 dark:border-zinc-800/70 dark:text-zinc-100 p-4 rounded-br-md"
+                                                    : "bg-card backdrop-blur-sm text-card-foreground p-5 rounded-bl-md border border-border dark:bg-zinc-900/80 dark:border-zinc-800/50"
                                             )}
                                         >
                                             {msg.role === "assistant" && (
@@ -1171,7 +1173,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                                 />
                                             )}
 
-                                            <div className="prose prose-invert prose-sm max-w-none">
+                                            <div className="prose prose-sm dark:prose-invert max-w-none text-foreground">
                                                 <ReactMarkdown
                                                     remarkPlugins={[remarkGfm, remarkMath]}
                                                     rehypePlugins={[rehypeKatex]}
@@ -1202,7 +1204,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                                 msg.attachments &&
                                                 msg.attachments.length > 0 && (
                                                     <div className="mt-3 space-y-2">
-                                                        <div className="text-xs text-zinc-400 mb-2">
+                                                        <div className="text-xs text-muted-foreground mb-2">
                                                             Attached files:
                                                         </div>
                                                         {msg.attachments.map((file) => (
@@ -1211,6 +1213,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                                                 file={file}
                                                                 onRemove={() => { }}
                                                                 compact={true}
+                                                                theme={theme}
                                                                 onInsert={
                                                                     onInsertCode
                                                                         ? (code) => handleInsertCode(code)
@@ -1222,8 +1225,8 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                                 )}
 
                                             {/* Message actions */}
-                                            <div className="flex items-center justify-between mt-3 pt-2 border-t border-zinc-700/30">
-                                                <div className="text-xs text-zinc-500">
+                                            <div className="flex items-center justify-between mt-3 pt-2 border-t border-border/70">
+                                                <div className="text-xs text-muted-foreground">
                                                     {msg.timestamp.toLocaleTimeString()}
                                                 </div>
                                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1233,7 +1236,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                                         onClick={() =>
                                                             navigator.clipboard.writeText(msg.content)
                                                         }
-                                                        className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-200"
+                                                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                                                     >
                                                         <Copy className="h-3 w-3" />
                                                     </Button>
@@ -1241,7 +1244,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={() => setInput(msg.content)}
-                                                        className="h-6 w-6 p-0 text-zinc-400 hover:text-zinc-200"
+                                                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                                                     >
                                                         <RefreshCw className="h-3 w-3" />
                                                     </Button>
@@ -1250,8 +1253,8 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                         </div>
 
                                         {msg.role === "user" && (
-                                            <Avatar className="h-9 w-9 border border-zinc-700 bg-zinc-800 shrink-0">
-                                                <AvatarFallback className="bg-zinc-700 text-zinc-300">
+                                            <Avatar className="h-9 w-9 border border-border bg-muted shrink-0">
+                                                <AvatarFallback className="bg-blue-50 text-blue-700 dark:bg-zinc-700 dark:text-zinc-300">
                                                     <User className="h-5 w-5" />
                                                 </AvatarFallback>
                                             </Avatar>
@@ -1262,9 +1265,9 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                     {msg.role === "assistant" &&
                                         msg.suggestions &&
                                         msg.suggestions.length > 0 && (
-                                            <div className="ml-14 space-y-2">
-                                                <div className="text-sm font-medium text-zinc-300 mb-3 flex items-center gap-2">
-                                                    <Sparkles className="h-4 w-4 text-purple-400" />
+                                            <div className="ml-13 space-y-2">
+                                                <div className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+                                                    <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                                                     Smart Code Suggestions ({msg.suggestions.length}):
                                                 </div>
                                                 {msg.suggestions.map((suggestion) => (
@@ -1281,6 +1284,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                                         onCopy={() => handleCopySuggestion(suggestion.code)}
                                                         onRun={onRunCode}
                                                         activeFileName={activeFileName}
+                                                        theme={theme}
                                                     />
                                                 ))}
                                             </div>
@@ -1290,12 +1294,12 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
 
                             {isLoading && (
                                 <div className="flex items-start gap-4 justify-start">
-                                    <div className="relative w-10 h-10 border rounded-full flex flex-col justify-center items-center">
-                                        <Brain className="h-5 w-5 text-zinc-400" />
+                                    <div className="relative w-9 h-9 shrink-0 border border-border bg-card shadow-2xs rounded-full flex flex-col justify-center items-center">
+                                        <Brain className="h-4 w-4 text-primary" />
                                     </div>
-                                    <div className="bg-zinc-900/80 backdrop-blur-sm border border-zinc-800/50 p-5 rounded-xl rounded-bl-md flex items-center gap-3">
-                                        <Loader2 className="h-4 w-4 animate-spin text-blue-400" />
-                                        <span className="text-sm text-zinc-300">
+                                    <div className="bg-card dark:bg-zinc-900/80 backdrop-blur-sm border border-border p-5 rounded-xl rounded-bl-md flex items-center gap-3 shadow-2xs dark:shadow-none">
+                                        <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
+                                        <span className="text-sm text-muted-foreground">
                                             {chatMode === "review"
                                                 ? "Analyzing code structure and patterns..."
                                                 : chatMode === "fix"
@@ -1313,8 +1317,8 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                     </div>
                     {/* Enhanced File Attachments Preview */}
                     {attachments.length > 0 && (
-                        <div className="shrink-0 border-t border-zinc-800 bg-zinc-900/50 p-4">
-                            <div className="text-sm font-medium text-zinc-300 mb-3 flex items-center justify-between">
+                        <div className="shrink-0 border-t border-border bg-muted/40 dark:bg-zinc-900/50 p-4">
+                            <div className="text-sm font-medium text-foreground mb-3 flex items-center justify-between">
                                 <span>Attached Code Files ({attachments.length})</span>
                                 <div className="flex items-center gap-2">
                                     <Badge variant="outline" className="text-xs">
@@ -1325,7 +1329,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => setAttachments([])}
-                                        className="h-6 px-2 text-xs text-zinc-400 hover:text-zinc-200"
+                                        className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
                                     >
                                         <Minus className="h-3 w-3 mr-1" />
                                         Clear All
@@ -1339,6 +1343,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                         file={{ ...file, type: "code" }}
                                         onRemove={() => removeAttachment(file.id)}
                                         compact={true}
+                                        theme={theme}
                                         onInsert={
                                             onInsertCode
                                                 ? (code) => handleInsertCode(code)
@@ -1353,7 +1358,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                     {/* Enhanced Input Form */}
                     <form
                         onSubmit={handleSendMessage}
-                        className="shrink-0 p-4 border-t border-zinc-800 bg-zinc-900/80 backdrop-blur-sm"
+                        className="shrink-0 p-4 border-t border-border bg-card/90 dark:bg-zinc-900/80 backdrop-blur-sm"
                     >
                         <div className="flex items-end gap-3">
                             <div className="flex-1 relative">
@@ -1377,7 +1382,7 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                         }
                                     }}
                                     disabled={isLoading}
-                                    className="min-h-[44px] max-h-32 bg-zinc-800/50 border-zinc-700/50 text-zinc-100 placeholder-zinc-500 focus:border-blue-500 focus:ring-blue-500/20 resize-none pr-20"
+                                    className="min-h-[44px] max-h-32 bg-background border-border text-foreground placeholder:text-muted-foreground focus:border-blue-500 focus:ring-blue-500/20 resize-none pr-20"
                                     rows={1}
                                 />
                                 <div className="absolute right-3 bottom-3 flex items-center gap-2">
@@ -1386,11 +1391,11 @@ export const AIChatSidePanel: React.FC<AIChatSidePanelProps> = ({
                                         variant="ghost"
                                         size="sm"
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="h-6 w-6 p-0 text-zinc-500 hover:text-zinc-300"
+                                        className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                                     >
                                         <Paperclip className="h-3 w-3" />
                                     </Button>
-                                    <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs text-zinc-500 bg-zinc-800 border border-zinc-700 rounded">
+                                    <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-xs text-muted-foreground bg-muted border border-border rounded">
                                         ⌘↵
                                     </kbd>
                                 </div>

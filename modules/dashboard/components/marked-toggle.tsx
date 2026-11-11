@@ -30,9 +30,9 @@ export const MarkedToggleButton = forwardRef<HTMLButtonElement, MarkedToggleButt
 
       try {
         const res = await toggleStarMarked(id, newMarkedState)
-        const {success ,error , isMarked} = res;
+        const { success, error, isMarked } = res;
 
-    //    if ismarked true then show marked successfully otherwise show start over
+        //    if ismarked true then show marked successfully otherwise show start over
         if (isMarked && !error && success) {
           toast.success("Added to Favorites successfully")
         } else {
@@ -59,7 +59,7 @@ export const MarkedToggleButton = forwardRef<HTMLButtonElement, MarkedToggleButt
         {isMarked ? (
           <StarIcon size={16} className="text-red-500 mr-2" />
         ) : (
-          <StarOffIcon size={16} className="text-gray-500 mr-2" />
+          <StarOffIcon size={16} className="text-muted-foreground mr-2" />
         )}
         {children || (isMarked ? "Remove Favorite" : "Add to Favorite")}
       </Button>

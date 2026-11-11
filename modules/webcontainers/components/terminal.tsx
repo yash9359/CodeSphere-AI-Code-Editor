@@ -28,6 +28,55 @@ export interface TerminalRef {
     focusTerminal: () => void;
 }
 
+const TERMINAL_THEMES = {
+    dark: {
+        background: "#09090B",
+        foreground: "#FAFAFA",
+        cursor: "#FAFAFA",
+        cursorAccent: "#09090B",
+        selectionBackground: "#27272A",
+        black: "#18181B",
+        red: "#EF4444",
+        green: "#22C55E",
+        yellow: "#EAB308",
+        blue: "#3B82F6",
+        magenta: "#A855F7",
+        cyan: "#06B6D4",
+        white: "#F4F4F5",
+        brightBlack: "#3F3F46",
+        brightRed: "#F87171",
+        brightGreen: "#4ADE80",
+        brightYellow: "#FDE047",
+        brightBlue: "#60A5FA",
+        brightMagenta: "#C084FC",
+        brightCyan: "#22D3EE",
+        brightWhite: "#FFFFFF",
+    },
+    light: {
+        background: "#FFFFFF",
+        foreground: "#0F172A",
+        cursor: "#2563EB",
+        cursorAccent: "#FFFFFF",
+        selectionBackground: "#BFDBFE",
+        black: "#0F172A",
+        red: "#DC2626",
+        green: "#15803D",
+        yellow: "#A16207",
+        blue: "#2563EB",
+        magenta: "#7C3AED",
+        cyan: "#0E7490",
+        white: "#334155",
+        brightBlack: "#64748B",
+        brightRed: "#EF4444",
+        brightGreen: "#16A34A",
+        brightYellow: "#CA8A04",
+        brightBlue: "#3B82F6",
+        brightMagenta: "#9333EA",
+        brightCyan: "#0891B2",
+        brightWhite: "#0F172A",
+    },
+} as const;
+
 const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
     webcontainerUrl,
     className,
@@ -35,6 +84,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
     webContainerInstance
 }, ref) => {
     const terminalRef = useRef<HTMLDivElement>(null);
+    const themeRef = useRef<"dark" | "light">(theme);
 
     // Changed only because Terminal is now dynamically imported
     const term = useRef<any>(null);
@@ -52,55 +102,6 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
     const historyIndex = useRef<number>(-1);
     const currentProcess = useRef<any>(null);
     const shellProcess = useRef<any>(null);
-
-    const terminalThemes = {
-        dark: {
-            background: "#09090B",
-            foreground: "#FAFAFA",
-            cursor: "#FAFAFA",
-            cursorAccent: "#09090B",
-            selection: "#27272A",
-            black: "#18181B",
-            red: "#EF4444",
-            green: "#22C55E",
-            yellow: "#EAB308",
-            blue: "#3B82F6",
-            magenta: "#A855F7",
-            cyan: "#06B6D4",
-            white: "#F4F4F5",
-            brightBlack: "#3F3F46",
-            brightRed: "#F87171",
-            brightGreen: "#4ADE80",
-            brightYellow: "#FDE047",
-            brightBlue: "#60A5FA",
-            brightMagenta: "#C084FC",
-            brightCyan: "#22D3EE",
-            brightWhite: "#FFFFFF",
-        },
-        light: {
-            background: "#FFFFFF",
-            foreground: "#18181B",
-            cursor: "#18181B",
-            cursorAccent: "#FFFFFF",
-            selection: "#E4E4E7",
-            black: "#18181B",
-            red: "#DC2626",
-            green: "#16A34A",
-            yellow: "#CA8A04",
-            blue: "#2563EB",
-            magenta: "#9333EA",
-            cyan: "#0891B2",
-            white: "#F4F4F5",
-            brightBlack: "#71717A",
-            brightRed: "#EF4444",
-            brightGreen: "#22C55E",
-            brightYellow: "#EAB308",
-            brightBlue: "#3B82F6",
-            brightMagenta: "#C084FC",
-            brightCyan: "#06B6D4",
-            brightWhite: "#FAFAFA",
-        },
-    };
 
     const writePrompt = useCallback(() => {
         if (term.current) {
@@ -134,7 +135,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
         if (
             command.trim() &&
             commandHistory.current[
-                commandHistory.current.length - 1
+            commandHistory.current.length - 1
             ] !== command
         ) {
             commandHistory.current.push(command);
@@ -266,7 +267,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
                     // Clear current line and write history command
                     const historyCommand =
                         commandHistory.current[
-                            historyIndex.current
+                        historyIndex.current
                         ];
 
                     term.current.write(
@@ -293,7 +294,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
 
                         const historyCommand =
                             commandHistory.current[
-                                historyIndex.current
+                            historyIndex.current
                             ];
 
                         term.current.write(
@@ -361,7 +362,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
             fontSize: 14,
             lineHeight: 1.2,
             letterSpacing: 0,
-            theme: terminalThemes[theme],
+            theme: TERMINAL_THEMES[themeRef.current],
             allowTransparency: false,
             convertEol: true,
             scrollback: 1000,
@@ -397,7 +398,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
         writePrompt();
 
         return terminal;
-    }, [theme, handleTerminalInput, writePrompt]);
+    }, [handleTerminalInput, writePrompt]);
 
     const connectToWebContainer = useCallback(async () => {
         if (!webContainerInstance || !term.current) return;
@@ -538,6 +539,13 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
     }, [initializeTerminal]);
 
     useEffect(() => {
+        themeRef.current = theme;
+        if (term.current) {
+            term.current.options.theme = TERMINAL_THEMES[theme];
+        }
+    }, [theme]);
+
+    useEffect(() => {
         if (
             webContainerInstance &&
             term.current &&
@@ -554,12 +562,12 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
     return (
         <div
             className={cn(
-                "flex flex-col h-full bg-background border rounded-lg overflow-hidden",
+                "flex flex-col h-full bg-card border border-border rounded-lg overflow-hidden shadow-[0_1px_2px_rgba(15,23,42,0.04)] dark:shadow-none",
                 className
             )}
         >
             {/* Terminal Header */}
-            <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/50">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/60 dark:bg-muted/50">
                 <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                         <div className="w-3 h-3 rounded-full bg-red-500"></div>
@@ -609,7 +617,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
                         onClick={() =>
                             setShowSearch(!showSearch)
                         }
-                        className="h-6 w-6 p-0 text-zinc-500 transition-all duration-200 ease-out hover:-translate-y-1 hover:scale-110 hover:bg-emerald-400/[0.08] hover:text-emerald-400 hover:shadow-[0_6px_16px_rgba(124,255,178,0.18)] active:translate-y-0 active:scale-95 active:shadow-none"
+                        className="h-6 w-6 p-0 text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-1 hover:scale-110 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:bg-emerald-400/[0.08] dark:hover:text-emerald-400 hover:shadow-[0_6px_16px_rgba(16,185,129,0.18)] active:translate-y-0 active:scale-95 active:shadow-none"
                     >
                         <Search className="h-3 w-3" />
                     </Button>
@@ -619,7 +627,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
                         variant="ghost"
                         size="sm"
                         onClick={copyTerminalContent}
-                        className="h-6 w-6 p-0 text-zinc-500 transition-all duration-200 ease-out hover:-translate-y-1 hover:scale-110 hover:bg-cyan-400/[0.08] hover:text-cyan-400 hover:shadow-[0_6px_16px_rgba(97,231,255,0.18)] active:translate-y-0 active:scale-95 active:shadow-none"
+                        className="h-6 w-6 p-0 text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-1 hover:scale-110 hover:bg-cyan-500/10 hover:text-cyan-700 dark:hover:bg-cyan-400/[0.08] dark:hover:text-cyan-400 hover:shadow-[0_6px_16px_rgba(6,182,212,0.18)] active:translate-y-0 active:scale-95 active:shadow-none"
                     >
                         <Copy className="h-3 w-3" />
                     </Button>
@@ -629,7 +637,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
                         variant="ghost"
                         size="sm"
                         onClick={downloadTerminalLog}
-                        className="h-6 w-6 p-0 text-zinc-500 transition-all duration-200 ease-out hover:-translate-y-1 hover:scale-110 hover:bg-violet-400/[0.08] hover:text-violet-400 hover:shadow-[0_6px_16px_rgba(192,153,255,0.18)] active:translate-y-0 active:scale-95 active:shadow-none"
+                        className="h-6 w-6 p-0 text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-1 hover:scale-110 hover:bg-violet-500/10 hover:text-violet-600 dark:hover:bg-violet-400/[0.08] dark:hover:text-violet-400 hover:shadow-[0_6px_16px_rgba(139,92,246,0.18)] active:translate-y-0 active:scale-95 active:shadow-none"
                     >
                         <Download className="h-3 w-3" />
                     </Button>
@@ -639,7 +647,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
                         variant="ghost"
                         size="sm"
                         onClick={clearTerminal}
-                        className="h-6 w-6 p-0 text-zinc-500 transition-all duration-200 ease-out hover:-translate-y-1 hover:scale-110 hover:bg-red-500/[0.09] hover:text-red-400 hover:shadow-[0_6px_16px_rgba(255,80,100,0.2)] active:translate-y-0 active:scale-95 active:shadow-none"
+                        className="h-6 w-6 p-0 text-muted-foreground transition-all duration-200 ease-out hover:-translate-y-1 hover:scale-110 hover:bg-red-500/10 hover:text-red-600 dark:hover:bg-red-500/[0.09] dark:hover:text-red-400 hover:shadow-[0_6px_16px_rgba(239,68,68,0.2)] active:translate-y-0 active:scale-95 active:shadow-none"
                     >
                         <Trash2 className="h-3 w-3" />
                     </Button>
@@ -653,7 +661,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
                     className="absolute inset-0 p-2"
                     style={{
                         background:
-                            terminalThemes[theme]
+                            TERMINAL_THEMES[theme]
                                 .background,
                     }}
                 />

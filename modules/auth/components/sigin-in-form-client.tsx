@@ -28,7 +28,7 @@ const SignInFormClient = () => {
 
             <div className="pointer-events-none absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-cyan-500/20 via-indigo-500/20 to-violet-500/20 opacity-75 blur-xl transition duration-500 group-hover:opacity-100" />
 
-            <Card className="relative w-full overflow-hidden rounded-2xl border-border/60 dark:border-white/10 bg-background/80 backdrop-blur-xl shadow-2xl">
+            <Card className="relative w-full overflow-hidden rounded-2xl border-slate-200/90 dark:border-white/10 bg-white/95 dark:bg-zinc-900/85 backdrop-blur-xl shadow-[0_20px_50px_rgba(15,23,42,0.09)] dark:shadow-2xl">
 
                 <div className="h-1 w-full bg-gradient-to-r from-cyan-400 via-indigo-500 to-violet-500" />
 
@@ -52,7 +52,7 @@ const SignInFormClient = () => {
                         <Button
                             type="submit"
                             variant="outline"
-                            className="group/btn relative h-12 w-full rounded-xl border-border/80 dark:border-white/10 bg-background/50 text-base font-medium transition-all duration-200 hover:bg-accent hover:scale-[1.01] active:scale-[0.99]"
+                            className="group/btn relative h-12 w-full rounded-xl border-slate-200 dark:border-white/10 bg-white dark:bg-background/50 text-base font-medium text-slate-800 dark:text-foreground shadow-2xs transition-all duration-200 hover:bg-slate-50 hover:border-slate-300 dark:hover:bg-accent hover:scale-[1.01] active:scale-[0.99]"
                         >
                             <FcGoogle className="mr-3 h-5 w-5 transition-transform duration-200 group-hover/btn:scale-110" />
                             <span>Continue with Google</span>
@@ -91,19 +91,19 @@ const SignInFormClient = () => {
                     </form>
                 </CardContent>
 
-                <CardFooter className="mt-4 border-t border-border/50 dark:border-white/5 bg-muted/20 px-7 py-5">
-                    <p className="w-full text-center text-xs leading-5 text-muted-foreground">
+                <CardFooter className="mt-4 border-t border-slate-200/80 dark:border-white/5 bg-slate-50/90 dark:bg-muted/20 px-7 py-5">
+                    <p className="w-full text-center text-xs leading-5 text-slate-600 dark:text-muted-foreground">
                         By continuing, you agree to our{" "}
                         <a
                             href="#"
-                            className="font-medium text-foreground/90 underline underline-offset-4 transition-colors hover:text-indigo-500 dark:hover:text-cyan-400"
+                            className="font-medium text-slate-900 dark:text-foreground/90 underline underline-offset-4 transition-colors hover:text-indigo-600 dark:hover:text-cyan-400"
                         >
                             Terms of Service
                         </a>{" "}
                         and{" "}
                         <a
                             href="#"
-                            className="font-medium text-foreground/90 underline underline-offset-4 transition-colors hover:text-indigo-500 dark:hover:text-cyan-400"
+                            className="font-medium text-slate-900 dark:text-foreground/90 underline underline-offset-4 transition-colors hover:text-indigo-600 dark:hover:text-cyan-400"
                         >
                             Privacy Policy
                         </a>
