@@ -1,109 +1,57 @@
 import Link from "next/link";
 import Image from "next/image";
-// import { ThemeToggle } from "@/components/ui/toggle-theme";
+import { FaGithub } from "react-icons/fa";
 import UserButton from "../auth/components/user-button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function Header() {
     return (
-        <>
-            <div className="sticky top-0 left-0 right-0 z-50">
-                <div className="bg-white dark:bg-black/5 w-full">
-                    {/* Rest of the header content */}
-                    <div className="flex items-center justify-center w-full flex-col">
-                        <div
-                            className={`
-                            flex items-center justify-between
-                            bg-linear-to-b from-white /90 via-gray-50/90 to-white/90
-                        dark:from-zinc-900/90 dark:via-zinc-800/90 dark:to-zinc-900/90
-                        shadow-[0_2px_20px_-2px_rgba(0,0,0,0.1)]
-                        backdrop-blur-md
-                        border-x border-b
-                        border-[rgba(230,230,230,0.7)] dark:border-[rgba(70,70,70,0.7)]
-                        w-full sm:min-w-[800px] sm:max-w-[1200px]
-                        rounded-b-[28px]
-                        px-4 py-2.5
-                        relative
-                        transition-all duration-300 ease-in-out
-                        `}
-                        >
-                            <div className="relative z-10 flex items-center justify-between w-full gap-2">
-                                {/* Logo Section with Navigation Links */}
-                                <div className="flex items-center gap-6 justify-center">
-                                    <Link
-                                        href="/"
-                                        className="flex items-center gap-1 justify-center"
-                                    >
-                                        <Image
-                                            src={"/CodeSphereSmall.png"}
-                                            alt="Logo"
-                                            height={45}
-                                            width={45}
-                                        />
+        <header className="sticky top-0 left-0 right-0 z-50 w-full px-4 pt-4">
+            <div className="relative mx-auto grid w-full max-w-5xl grid-cols-3 items-center rounded-full border border-slate-200/80 dark:border-white/10 bg-white/75 dark:bg-zinc-900/70 px-4 py-2 sm:px-6 shadow-[0_8px_32px_rgba(15,23,42,0.06)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] backdrop-blur-xl transition-all duration-300">
 
-                                        <span className="hidden sm:block font-extrabold text-lg">
-                                            CodeSphere AI Editor
-                                        </span>
-                                    </Link>
-                                    <span className="text-zinc-300 dark:text-zinc-700">|</span>
-                                    {/* Desktop Navigation Links */}
-                                    <div className="hidden sm:flex items-center gap-4">
-                                        <Link
-                                            href="/docs/components/background-paths"
-                                            className="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
-                                        >
-                                            Docs
-                                        </Link>
-                                        {/* <Link
-                                            href="/pricing"
-                                            className="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
-                                        >
-                                            Pricing
-                                        </Link> */}
-                                        <Link
-                                            href="https://codesnippetui.pro/templates?utm_source=codesnippetui.com&utm_medium=header"
-                                            target="_blank"
-                                            className="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors flex items-center gap-2"
-                                        >
-                                            API
-                                            <span className="text-green-500 dark:text-green-400 border border-green-500 dark:border-green-400 rounded-lg px-1 py-0.5 text-xs">
-                                                New
-                                            </span>
-                                        </Link>
-                                    </div>
-                                </div>
+                <div className="pointer-events-none absolute inset-x-12 top-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/40 dark:via-cyan-400/40 to-transparent" />
 
-                                {/* Right side items */}
-                                <div className="hidden sm:flex items-center gap-3">
-                                    <span className="text-zinc-300 dark:text-zinc-700">|</span>
-                                    {/* <HeaderPro /> */}
-                                    <ThemeToggle />
-                                    <UserButton />
-                                </div>
 
-                                {/* Mobile Navigation remains unchanged */}
-                                <div className="flex sm:hidden items-center gap-4">
-                                    <Link
-                                        href="/docs/components/action-search-bar"
-                                        className="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
-                                    >
-                                        Docs
-                                    </Link>
-                                    <Link
-                                        href="/pricing"
-                                        className="text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100 transition-colors"
-                                    >
-                                        API
-                                    </Link>
-                                    {/* <ThemeToggle /> */}
-                                    <ThemeToggle />
-                                    <UserButton />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div className="flex items-center justify-start ">
+                    <Link
+                        target="_blank"
+                        href="https://github.com/yash9359/CodeSphere-AI-Code-Editor"
+                        className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5 transition-colors"
+                    >
+                        <FaGithub className="h-4 w-4" />
+                        <span>Docs</span>
+                    </Link>
                 </div>
-            </div >
-        </>
+
+
+                <div className="flex items-center justify-center">
+                    <Link
+                        href="/"
+                        className="flex items-center gap-2.5 group"
+                    >
+                        <Image
+                            src="/CodeSphereSmall.png"
+                            alt="CodeSphere Logo"
+                            height={36}
+                            width={36}
+                            className="h-8 w-8 sm:h-9 sm:w-9 object-contain transition-transform duration-200 group-hover:scale-105"
+                        />
+                        <span className="hidden md:inline-block font-bold text-base tracking-tight text-slate-900 dark:text-white whitespace-nowrap">
+                            CodeSphere{" "}
+                            <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 dark:from-cyan-400 dark:via-blue-500 dark:to-violet-500 bg-clip-text text-transparent">
+                                AI Editor
+                            </span>
+                        </span>
+                    </Link>
+                </div>
+
+
+                <div className="flex items-center justify-end gap-2.5 sm:gap-3">
+                    <ThemeToggle />
+                    <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10" />
+                    <UserButton />
+                </div>
+            </div>
+        </header>
     );
 }
