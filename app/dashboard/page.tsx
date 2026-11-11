@@ -1,4 +1,3 @@
-import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { deleteProjectById, duplicateProjectById, editProjectById, getAllPlaygroundForUser } from '@/modules/dashboard/actions'
 import AddNewButton from '@/modules/dashboard/components/add-new'
 import AddRepo from '@/modules/dashboard/components/add-repo'
@@ -11,7 +10,7 @@ const Page = async () => {
   const playgrounds = await getAllPlaygroundForUser();
 
   return (
-    <div className='flex flex-col justify-start items-center min-h-screen mx-auto max-w-7xl px-4 py-10'>
+    <div className='flex flex-col justify-start items-center w-full mx-auto max-w-7xl px-4 sm:px-6 py-8'>
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6 w-full'>
         <AddNewButton />
         <AddRepo />
@@ -23,9 +22,9 @@ const Page = async () => {
             <EmptyState />
           ) : (
             <ProjectTable projects={playgrounds || []}
-              onDeleteProject={ deleteProjectById}
-              onUpdateProject={ editProjectById}
-              onDuplicateProject={ duplicateProjectById}
+              onDeleteProject={deleteProjectById}
+              onUpdateProject={editProjectById}
+              onDuplicateProject={duplicateProjectById}
             />
           )
         }

@@ -46,7 +46,7 @@ export function DeleteDialog({
           <AlertDialogAction
             onClick={onConfirm}
             className={cn(
-              "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              "bg-destructive text-white hover:bg-destructive/90"
             )}
           >
             {confirmLabel}

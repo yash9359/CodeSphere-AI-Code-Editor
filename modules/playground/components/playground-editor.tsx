@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useEffect, useCallback } from "react"
+import { useTheme } from "next-themes"
 import Editor, { type Monaco } from "@monaco-editor/react"
 import { configureMonaco, defaultEditorOptions, getEditorLanguage } from "@/modules/playground/lib/editor-config"
 import type { TemplateFile } from "@/modules/playground/lib/path-to-json"
@@ -38,6 +39,17 @@ const PlaygroundEditor = ({
     const suggestionVisibleKeyRef = useRef<any>(null)
     const isAcceptingSuggestionRef = useRef(false)
     const suggestionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const { resolvedTheme } = useTheme()
+    const activeThemeMode: "light" | "dark" = resolvedTheme === "light" ? "light" : "dark"
+    const editorTheme = activeThemeMode === "light" ? "modern-light" : "modern-dark"
+    const activeThemeModeRef = useRef<"light" | "dark">(activeThemeMode)
+
+    useEffect(() => {
+        activeThemeModeRef.current = activeThemeMode
+        if (monacoRef.current) {
+            monacoRef.current.editor.setTheme(editorTheme)
+        }
+    }, [activeThemeMode, editorTheme])
 
     // Editor listeners are registered once on mount, so they read the latest
     // props through refs instead of capturing stale values.
@@ -194,7 +206,7 @@ const PlaygroundEditor = ({
             cursorSmoothCaretAnimation: "on",
         })
 
-        configureMonaco(monaco)
+        configureMonaco(monaco, activeThemeModeRef.current)
 
         // Context key so our Tab/Escape bindings only apply while an AI suggestion is shown;
         // otherwise Monaco's default Tab/Escape behavior is untouched.
@@ -294,17 +306,17 @@ const PlaygroundEditor = ({
     }, [])
 
     return (
-        <div className="relative h-full w-full min-w-0 overflow-hidden">
+        <div className="relative h-full w-full min-w-0 overflow-hidden bg-background">
             {suggestionLoading && (
-                <div className="absolute top-2 right-2 z-10 bg-red-100 dark:bg-red-900 px-2 py-1 rounded text-xs text-red-700 dark:text-red-300 flex items-center gap-1">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-md border border-blue-200 dark:border-blue-500/30 bg-blue-50/95 dark:bg-blue-950/90 px-2.5 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 shadow-sm">
+                    <div className="h-2 w-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse"></div>
                     AI thinking...
                 </div>
             )}
 
             {suggestion && !suggestionLoading && (
-                <div className="absolute top-2 right-2 z-10 bg-green-100 dark:bg-green-900 px-2 py-1 rounded text-xs text-green-700 dark:text-green-300 flex items-center gap-1">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5 rounded-md border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50/95 dark:bg-emerald-950/90 px-2.5 py-1 text-xs font-medium text-emerald-700 dark:text-emerald-300 shadow-sm">
+                    <div className="h-2 w-2 rounded-full bg-emerald-600 dark:bg-emerald-400"></div>
                     Press Tab to accept
                 </div>
             )}
@@ -312,6 +324,7 @@ const PlaygroundEditor = ({
             <Editor
                 height="100%"
                 width="100%"
+                theme={editorTheme}
                 value={content}
                 onChange={(value) => onContentChange(value || "")}
                 onMount={handleEditorDidMount}

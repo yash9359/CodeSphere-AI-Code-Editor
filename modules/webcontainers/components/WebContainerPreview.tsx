@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
+import { useTheme } from "next-themes";
 import type { TemplateFolder } from "@/modules/playground/lib/path-to-json";
 import { transformToWebContainerFormat } from "../hooks/transformer";
 import { CheckCircle, Loader2, XCircle } from "lucide-react";
@@ -47,6 +48,8 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
     // Ref to access terminal methods
     const terminalRef = useRef<any>(null);
     const serverProcessRef = useRef<{ kill: () => void } | null>(null);
+    const { resolvedTheme } = useTheme();
+    const activeTheme: "light" | "dark" = resolvedTheme === "light" ? "light" : "dark";
 
     // Reset setup state when forceResetup changes
     useEffect(() => {
@@ -117,7 +120,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
                     terminalRef.current.writeToTerminal("🔄 Transforming template data...\r\n");
                 }
 
-                
+
                 const files = transformToWebContainerFormat(templateData);
 
                 setLoadingState((prev) => ({
@@ -281,11 +284,11 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
 
     if (isLoading) {
         return (
-            <div className="h-full flex items-center justify-center">
-                <div className="text-center space-y-4 max-w-md p-6 rounded-lg bg-gray-50 dark:bg-gray-900">
+            <div className="h-full flex items-center justify-center p-4 bg-background">
+                <div className="text-center space-y-4 max-w-md p-6 rounded-xl border border-border bg-card shadow-[0_1px_3px_rgba(15,23,42,0.06),0_6px_16px_rgba(15,23,42,0.04)] dark:shadow-none">
                     <Loader2 className="h-10 w-10 animate-spin text-primary mx-auto" />
-                    <h3 className="text-lg font-medium">Initializing WebContainer</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <h3 className="text-lg font-medium text-foreground">Initializing WebContainer</h3>
+                    <p className="text-sm text-muted-foreground">
                         Setting up the environment for your project...
                     </p>
                 </div>
@@ -295,8 +298,8 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
 
     if (error || setupError) {
         return (
-            <div className="h-full flex items-center justify-center">
-                <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-6 rounded-lg max-w-md">
+            <div className="h-full flex items-center justify-center p-4 bg-background">
+                <div className="border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 p-6 rounded-xl max-w-md shadow-sm">
                     <div className="flex items-center gap-2 mb-3">
                         <XCircle className="h-5 w-5" />
                         <h3 className="font-semibold">Error</h3>
@@ -309,11 +312,11 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
 
     const getStepIcon = (stepIndex: number) => {
         if (stepIndex < currentStep) {
-            return <CheckCircle className="h-5 w-5 text-green-500" />;
+            return <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />;
         } else if (stepIndex === currentStep) {
-            return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
+            return <Loader2 className="h-5 w-5 animate-spin text-blue-600 dark:text-blue-400" />;
         } else {
-            return <div className="h-5 w-5 rounded-full border-2 border-gray-300" />;
+            return <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/30" />;
         }
     };
 
@@ -322,9 +325,9 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
         const isComplete = stepIndex < currentStep;
 
         return (
-            <span className={`text-sm font-medium ${isComplete ? 'text-green-600' :
-                isActive ? 'text-blue-600' :
-                    'text-gray-500'
+            <span className={`text-sm font-medium ${isComplete ? 'text-emerald-700 dark:text-emerald-400' :
+                isActive ? 'text-blue-600 dark:text-blue-400' :
+                    'text-muted-foreground'
                 }`}>
                 {label}
             </span>
@@ -332,10 +335,10 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
     };
 
     return (
-        <div className="h-full w-full flex flex-col">
+        <div className="h-full w-full flex flex-col bg-background">
             {!previewUrl ? (
                 <div className="h-full flex flex-col">
-                    <div className="w-full max-w-md p-6 m-5 rounded-lg bg-white dark:bg-zinc-800 shadow-sm mx-auto">
+                    <div className="w-full max-w-md p-6 m-5 rounded-xl border border-border bg-card shadow-[0_1px_3px_rgba(15,23,42,0.06),0_6px_16px_rgba(15,23,42,0.04)] dark:shadow-sm mx-auto">
 
 
                         <Progress
@@ -343,7 +346,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
                             className="h-2 mb-6"
                         />
 
-                        <div className="space-y-4 mb-6">
+                        <div className="space-y-4 mb-2">
                             <div className="flex items-center gap-3">
                                 {getStepIcon(1)}
                                 {getStepText(1, "Transforming template data")}
@@ -368,7 +371,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
                         <TerminalComponent
                             ref={terminalRef}
                             webContainerInstance={instance}
-                            theme="dark"
+                            theme={activeTheme}
                             className="h-full"
                         />
                     </div>
@@ -376,20 +379,20 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
             ) : (
                 <div className="h-full flex flex-col">
                     {/* Preview */}
-                    <div className="flex-1">
+                    <div className="flex-1 bg-white [color-scheme:only_light]">
                         <iframe
                             src={`${previewUrl}?preview=${previewRevision}`}
-                            className="w-full h-full border-none"
+                            className="w-full h-full border-none bg-white [color-scheme:only_light]"
                             title="WebContainer Preview"
                         />
                     </div>
 
                     {/* Terminal at bottom when preview is ready */}
-                    <div className="h-64 border-t">
+                    <div className="h-64 border-t border-border">
                         <TerminalComponent
                             ref={terminalRef}
                             webContainerInstance={instance}
-                            theme="dark"
+                            theme={activeTheme}
                             className="h-full"
                         />
                     </div>

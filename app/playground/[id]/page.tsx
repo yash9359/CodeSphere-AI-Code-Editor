@@ -15,6 +15,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import {
     Tooltip,
     TooltipContent,
@@ -346,11 +347,11 @@ const MainPlaygroundPage = () => {
     if (error) {
         return (
             <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
-                <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-                <h2 className="text-xl font-semibold text-red-600 mb-2">
+                <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+                <h2 className="text-xl font-semibold text-destructive mb-2">
                     Something went wrong
                 </h2>
-                <p className="text-gray-600 mb-4">{error}</p>
+                <p className="text-muted-foreground mb-4">{error}</p>
                 <Button onClick={() => window.location.reload()} variant="destructive">
                     Try Again
                 </Button>
@@ -362,11 +363,11 @@ const MainPlaygroundPage = () => {
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
-                <div className="w-full max-w-md p-6 rounded-lg shadow-sm border">
-                    <h2 className="text-xl font-semibold mb-6 text-center">
+                <div className="w-full max-w-md p-6 rounded-xl bg-card border border-border shadow-[0_1px_3px_rgba(15,23,42,0.06),0_8px_24px_rgba(15,23,42,0.06)] dark:shadow-sm">
+                    <h2 className="text-xl font-semibold mb-6 text-center text-foreground">
                         Loading Playground
                     </h2>
-                    <div className="mb-8">
+                    <div className="mb-2 space-y-1">
                         <LoadingStep
                             currentStep={1}
                             step={1}
@@ -389,7 +390,7 @@ const MainPlaygroundPage = () => {
         return (
             <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
                 <FolderOpen className="h-12 w-12 text-amber-500 mb-4" />
-                <h2 className="text-xl font-semibold text-amber-600 mb-2">
+                <h2 className="text-xl font-semibold text-amber-700 dark:text-amber-400 mb-2">
                     No template data available
                 </h2>
                 <Button onClick={() => window.location.reload()} variant="outline">
@@ -416,7 +417,7 @@ const MainPlaygroundPage = () => {
                 />
 
                 <SidebarInset>
-                    <header className="flex h-16 shrink-0 items-center gap-2 border-b bg-background/80 px-4 backdrop-blur-md">
+                    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-border/80 bg-card/85 dark:bg-background/80 px-4 backdrop-blur-md">
                         <SidebarTrigger className="-ml-1" />
 
                         <Separator orientation="vertical" className="mr-2 h-4" />
@@ -431,7 +432,7 @@ const MainPlaygroundPage = () => {
                                 <p className="text-xs text-muted-foreground">
                                     {openFiles.length} File(s) Open
                                     {hasUnsavedChanges && (
-                                        <span className="ml-1.5 text-amber-500">
+                                        <span className="ml-1.5 font-medium text-amber-600 dark:text-amber-400">
                                             • Unsaved changes
                                         </span>
                                     )}
@@ -451,17 +452,17 @@ const MainPlaygroundPage = () => {
                                             className="
                                             group relative h-9 gap-1.5 overflow-hidden
                                             rounded-lg
-                                            border-blue-500/40
-                                            bg-blue-500/[0.08]
+                                            border-blue-200 dark:border-blue-500/40
+                                            bg-blue-50/90 dark:bg-blue-500/[0.08]
                                             px-3
-                                            text-blue-500
-                                            shadow-[0_2px_10px_rgba(59,130,246,0.10)]
+                                            text-blue-700 dark:text-blue-400
+                                            shadow-[0_2px_10px_rgba(37,99,235,0.08)] dark:shadow-[0_2px_10px_rgba(59,130,246,0.10)]
                                             transition-all duration-200
 
-                                            hover:border-blue-400/70
-                                            hover:bg-blue-500/[0.15]
-                                            hover:text-blue-400
-                                            hover:shadow-[0_0_18px_rgba(59,130,246,0.22)]
+                                            hover:border-blue-400 dark:hover:border-blue-400/70
+                                            hover:bg-blue-100/90 dark:hover:bg-blue-500/[0.15]
+                                            hover:text-blue-800 dark:hover:text-blue-300
+                                            hover:shadow-[0_4px_16px_rgba(37,99,235,0.18)] dark:hover:shadow-[0_0_18px_rgba(59,130,246,0.22)]
                                             hover:-translate-y-px
 
                                             active:translate-y-0
@@ -505,22 +506,24 @@ const MainPlaygroundPage = () => {
                                             className="
                                             group relative h-9 gap-1.5 overflow-hidden
                                             rounded-lg
-                                            border-violet-500/40
+                                            border-violet-200 dark:border-violet-500/40
                                             bg-gradient-to-r
-                                            from-violet-500/[0.10]
-                                            via-indigo-500/[0.08]
-                                            to-blue-500/[0.10]
+                                            from-violet-50 via-indigo-50 to-blue-50
+                                            dark:from-violet-500/[0.10]
+                                            dark:via-indigo-500/[0.08]
+                                            dark:to-blue-500/[0.10]
                                             px-3
-                                            text-violet-500
-                                            shadow-[0_2px_12px_rgba(139,92,246,0.12)]
+                                            text-violet-700 dark:text-violet-400
+                                            shadow-[0_2px_10px_rgba(124,58,237,0.08)] dark:shadow-[0_2px_12px_rgba(139,92,246,0.12)]
                                             transition-all duration-200
 
-                                            hover:border-violet-400/70
-                                            hover:from-violet-500/[0.18]
-                                            hover:via-indigo-500/[0.15]
-                                            hover:to-blue-500/[0.18]
-                                            hover:text-violet-400
-                                            hover:shadow-[0_0_20px_rgba(139,92,246,0.25)]
+                                            hover:border-violet-400 dark:hover:border-violet-400/70
+                                            hover:from-violet-100 hover:via-indigo-100 hover:to-blue-100
+                                            dark:hover:from-violet-500/[0.18]
+                                            dark:hover:via-indigo-500/[0.15]
+                                            dark:hover:to-blue-500/[0.18]
+                                            hover:text-violet-800 dark:hover:text-violet-300
+                                            hover:shadow-[0_4px_16px_rgba(124,58,237,0.18)] dark:hover:shadow-[0_0_20px_rgba(139,92,246,0.25)]
                                             hover:-translate-y-px
 
                                             active:translate-y-0
@@ -563,7 +566,7 @@ const MainPlaygroundPage = () => {
                                     suggestionLoading={aiSuggestions.isLoading}
                                 />
 
-
+                                <ThemeToggle className="size-9 rounded-lg border-border bg-card/80 dark:border-white/10 dark:bg-white/5" />
 
                                 {/* Settings */}
                                 <DropdownMenu>
@@ -574,15 +577,15 @@ const MainPlaygroundPage = () => {
                                             className="
                                             size-9
                                             rounded-lg
-                                            border-border/60
-                                            bg-background/50
+                                            border-border/80 dark:border-border/60
+                                            bg-card/80 dark:bg-background/50
                                             text-muted-foreground
                                             shadow-sm
                                             transition-all duration-200
 
                                             hover:border-indigo-500/40
                                             hover:bg-indigo-500/10
-                                            hover:text-indigo-500
+                                            hover:text-indigo-600 dark:hover:text-indigo-400
                                             hover:shadow-[0_0_14px_rgba(99,102,241,0.15)]
                                             hover:-translate-y-px
 
@@ -620,7 +623,7 @@ const MainPlaygroundPage = () => {
                     <div className="h-[calc(100vh-4rem)]">
                         {openFiles.length > 0 ? (
                             <div className="h-full flex flex-col">
-                                <div className="border-b bg-muted/30">
+                                <div className="border-b border-border bg-muted/50 dark:bg-muted/30">
                                     <Tabs
                                         value={activeFileId || ""}
                                         onValueChange={setActiveFileId}
@@ -636,28 +639,30 @@ const MainPlaygroundPage = () => {
                                                             h-8
                                                             px-3
                                                             rounded-md
+                                                            border
+                                                            border-transparent
                                                             text-muted-foreground
                                                             transition-all
                                                             duration-200
                                                             ease-out
 
-                                                            hover:bg-muted/70
+                                                            hover:bg-background/70
                                                             hover:text-foreground
 
-                                                            data-[state=active]:
-                                                                bg-gradient-to-b
-                                                                data-[state=active]:from-blue-500/20
-                                                                data-[state=active]:via-blue-500/10
-                                                                data-[state=active]:to-blue-500/5
+                                                            data-[state=active]:bg-card
+                                                            dark:data-[state=active]:bg-gradient-to-b
+                                                            dark:data-[state=active]:from-blue-500/20
+                                                            dark:data-[state=active]:via-blue-500/10
+                                                            dark:data-[state=active]:to-blue-500/5
 
-                                                            data-[state=active]:text-blue-500
+                                                            data-[state=active]:text-blue-700
+                                                            dark:data-[state=active]:text-blue-400
 
-                                                            data-[state=active]:
-                                                                border
-                                                                data-[state=active]:border-blue-500/30
+                                                            data-[state=active]:border-blue-200
+                                                            dark:data-[state=active]:border-blue-500/30
 
-                                                            data-[state=active]:
-                                                                shadow-[0_3px_10px_rgba(59,130,246,0.20),inset_0_1px_0_rgba(255,255,255,0.12)]
+                                                            data-[state=active]:shadow-[0_2px_8px_rgba(37,99,235,0.12)]
+                                                            dark:data-[state=active]:shadow-[0_3px_10px_rgba(59,130,246,0.20),inset_0_1px_0_rgba(255,255,255,0.12)]
 
                                                             data-[state=active]:translate-y-[-1px]
 
@@ -670,7 +675,7 @@ const MainPlaygroundPage = () => {
                                                                 className="
                                                                     h-3.5
                                                                     w-3.5
-                                                                    text-blue-500
+                                                                    text-blue-600 dark:text-blue-400
                                                                 "
                                                             />
 
@@ -686,7 +691,7 @@ const MainPlaygroundPage = () => {
                                                                         h-1.5
                                                                         w-1.5
                                                                         rounded-full
-                                                                        bg-blue-500
+                                                                        bg-blue-600 dark:bg-blue-400
                                                                         shadow-[0_0_6px_rgba(59,130,246,0.8)]
                                                                     "
                                                                 />
@@ -708,7 +713,8 @@ const MainPlaygroundPage = () => {
 
                                                                     text-muted-foreground
 
-                                                                    hover:bg-blue-500
+                                                                    hover:bg-blue-600
+                                                                    dark:hover:bg-blue-500
                                                                     hover:text-white
 
                                                                     hover:shadow-[0_0_8px_rgba(59,130,246,0.5)]
@@ -741,29 +747,30 @@ const MainPlaygroundPage = () => {
 
                                                         text-xs
                                                         font-medium
-                                                        text-blue-500
+                                                        text-blue-700 dark:text-blue-400
 
-                                                        bg-blue-500/10
+                                                        bg-blue-50 dark:bg-blue-500/10
 
                                                         border
-                                                        border-blue-500/20
+                                                        border-blue-200 dark:border-blue-500/20
 
-                                                        shadow-[0_2px_6px_rgba(59,130,246,0.15),inset_0_1px_0_rgba(255,255,255,0.10)]
+                                                        shadow-2xs
+                                                        dark:shadow-[0_2px_6px_rgba(59,130,246,0.15),inset_0_1px_0_rgba(255,255,255,0.10)]
 
                                                         transition-all
                                                         duration-200
                                                         ease-out
 
-                                                        hover:bg-blue-500/20
-                                                        hover:border-blue-500/40
-                                                        hover:text-blue-400
+                                                        hover:bg-blue-100 dark:hover:bg-blue-500/20
+                                                        hover:border-blue-300 dark:hover:border-blue-500/40
+                                                        hover:text-blue-800 dark:hover:text-blue-300
 
-                                                        hover:shadow-[0_4px_12px_rgba(59,130,246,0.25),inset_0_1px_0_rgba(255,255,255,0.15)]
+                                                        hover:shadow-[0_4px_12px_rgba(37,99,235,0.16)] dark:hover:shadow-[0_4px_12px_rgba(59,130,246,0.25),inset_0_1px_0_rgba(255,255,255,0.15)]
 
                                                         hover:-translate-y-[1px]
 
                                                         active:translate-y-0
-                                                        active:shadow-[0_1px_3px_rgba(59,130,246,0.15)]
+                                                        active:shadow-2xs
                                                             "
                                                 >
                                                     Close All

@@ -52,14 +52,14 @@ export default function Home() {
         CodeSphere Editor is a powerful and intelligent code editor that
         enhances your coding experience with advanced features and seamless
         integration. Designed to help you{" "}
-        <span className="font-semibold text-slate-800 dark:text-foreground/90">
+        <span className="font-semibold text-slate-900 dark:text-foreground/90">
           write, debug, and optimize
         </span>{" "}
         your code efficiently.
       </p>
 
 
-      <div className="mt-3.5">
+      <div className="mt-8">
         <Link href="/dashboard">
           <Button
             variant="brand"

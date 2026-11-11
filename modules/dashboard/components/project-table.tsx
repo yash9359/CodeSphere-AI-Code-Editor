@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { format } from "date-fns";
 import type { Project } from "../types";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
     Table,
@@ -164,28 +164,28 @@ export default function ProjectTable({
 
     return (
         <>
-            <div className="border rounded-xl overflow-hidden bg-card shadow-sm">
+            <div className="rounded-xl border border-border overflow-hidden bg-card shadow-[0_1px_3px_rgba(15,23,42,0.06),0_6px_16px_rgba(15,23,42,0.04)] dark:shadow-none">
                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Project</TableHead>
-                            <TableHead>Template</TableHead>
-                            <TableHead>Created</TableHead>
-                            <TableHead>User</TableHead>
-                            <TableHead className="w-[50px]">Actions</TableHead>
+                    <TableHeader className="bg-slate-50/90 dark:bg-muted/30">
+                        <TableRow className="hover:bg-transparent">
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Project</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Template</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Created</TableHead>
+                            <TableHead className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">User</TableHead>
+                            <TableHead className="w-[50px] text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {projects.map((project) => (
                             <TableRow
                                 key={project.id}
-                                className="transition-colors hover:bg-blue-500/5"
+                                className="transition-colors hover:bg-blue-50/70 dark:hover:bg-blue-500/5"
                             >
                                 <TableCell className="font-medium">
                                     <div className="flex flex-col">
                                         <Link
                                             href={`/playground/${project.id}`}
-                                            className="transition-colors hover:text-blue-500 hover:underline"
+                                            className="transition-colors hover:text-blue-600 dark:hover:text-blue-400 hover:underline"
                                         >
                                             <span className="font-semibold">{project.title}</span>
                                         </Link>
@@ -200,9 +200,9 @@ export default function ProjectTable({
                                     <Badge
                                         variant="outline"
                                         className="
-                                border-blue-500/30
-                                bg-blue-500/10
-                                text-blue-500
+                                border-blue-200
+                                bg-blue-50
+                                text-blue-700
                                 dark:border-blue-400/30
                                 dark:bg-blue-400/10
                                 dark:text-blue-400
@@ -217,16 +217,16 @@ export default function ProjectTable({
                                 </TableCell>
 
                                 <TableCell>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-transparent transition-all hover:ring-blue-500/30">
-                                            <Image
-                                                src={project.user.image || "/placeholder.svg"}
-                                                alt={project.user.name || ""}
-                                                width={32}
-                                                height={32}
-                                                className="object-cover"
+                                    <div className="flex items-center gap-2.5">
+                                        <Avatar className="size-8 ring-1 ring-border transition-all hover:ring-blue-500/40">
+                                            <AvatarImage
+                                                src={project.user.image ?? undefined}
+                                                alt={project.user.name || "User avatar"}
                                             />
-                                        </div>
+                                            <AvatarFallback className="bg-blue-50 text-blue-700 text-xs font-medium dark:bg-blue-950/60 dark:text-blue-300">
+                                                {(project.user.name || "U").slice(0, 2).toUpperCase()}
+                                            </AvatarFallback>
+                                        </Avatar>
 
                                         <span className="text-sm">{project.user.name}</span>
                                     </div>
@@ -242,7 +242,8 @@ export default function ProjectTable({
                                         h-8 w-8
                                         transition-all
                                         hover:bg-blue-500/10
-                                        hover:text-blue-500
+                                        hover:text-blue-600
+                                        dark:hover:text-blue-400
                                     "
                                             >
                                                 <MoreHorizontal className="h-4 w-4" />
@@ -260,7 +261,7 @@ export default function ProjectTable({
 
                                             <DropdownMenuItem
                                                 asChild
-                                                className="focus:bg-blue-500/10 focus:text-blue-500"
+                                                className="focus:bg-blue-500/10 focus:text-blue-600 dark:focus:text-blue-400"
                                             >
                                                 <Link
                                                     href={`/playground/${project.id}`}
@@ -273,7 +274,7 @@ export default function ProjectTable({
 
                                             <DropdownMenuItem
                                                 asChild
-                                                className="focus:bg-blue-500/10 focus:text-blue-500"
+                                                className="focus:bg-blue-500/10 focus:text-blue-600 dark:focus:text-blue-400"
                                             >
                                                 <Link
                                                     href={`/playground/${project.id}`}
@@ -289,7 +290,7 @@ export default function ProjectTable({
 
                                             <DropdownMenuItem
                                                 onClick={() => handleEditClick(project)}
-                                                className="focus:bg-blue-500/10 focus:text-blue-500"
+                                                className="focus:bg-blue-500/10 focus:text-blue-600 dark:focus:text-blue-400"
                                             >
                                                 <Edit3 className="h-4 w-4 mr-2" />
                                                 Edit Project
@@ -297,7 +298,7 @@ export default function ProjectTable({
 
                                             <DropdownMenuItem
                                                 onClick={() => handleDuplicateProject(project)}
-                                                className="focus:bg-blue-500/10 focus:text-blue-500"
+                                                className="focus:bg-blue-500/10 focus:text-blue-600 dark:focus:text-blue-400"
                                             >
                                                 <Copy className="h-4 w-4 mr-2" />
                                                 Duplicate
@@ -305,7 +306,7 @@ export default function ProjectTable({
 
                                             <DropdownMenuItem
                                                 onClick={() => copyProjectUrl(project.id)}
-                                                className="focus:bg-blue-500/10 focus:text-blue-500"
+                                                className="focus:bg-blue-500/10 focus:text-blue-600 dark:focus:text-blue-400"
                                             >
                                                 <Download className="h-4 w-4 mr-2" />
                                                 Copy URL
@@ -331,12 +332,12 @@ export default function ProjectTable({
 
             {/* Edit Project Dialog */}
             <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-                <DialogContent className="sm:max-w-[425px] rounded-xl border shadow-xl">
+                <DialogContent className="sm:max-w-[425px] rounded-xl border border-border shadow-xl">
                     <DialogHeader>
                         <DialogTitle>Edit Project</DialogTitle>
                         <DialogDescription>
                             Make changes to your project details here. Click save when
-                            you:&apos;re done.
+                            you&apos;re done.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -381,7 +382,7 @@ export default function ProjectTable({
                             variant="outline"
                             onClick={() => setEditDialogOpen(false)}
                             disabled={isLoading}
-                            className="transition-colors hover:border-blue-500 hover:text-blue-500"
+                            className="transition-colors hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400"
                         >
                             Cancel
                         </Button>
@@ -390,7 +391,7 @@ export default function ProjectTable({
                             type="button"
                             onClick={handleUpdateProject}
                             disabled={isLoading || !editData.title.trim()}
-                            className="bg-blue-500 hover:bg-blue-600 text-white"
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
                         >
                             {isLoading ? "Saving..." : "Save Changes"}
                         </Button>
@@ -400,7 +401,7 @@ export default function ProjectTable({
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                <AlertDialogContent className="rounded-xl border shadow-xl">
+                <AlertDialogContent className="rounded-xl border border-border shadow-xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Delete Project</AlertDialogTitle>
 
@@ -414,7 +415,7 @@ export default function ProjectTable({
                     <AlertDialogFooter>
                         <AlertDialogCancel
                             disabled={isLoading}
-                            className="transition-colors hover:border-blue-500 hover:text-blue-500"
+                            className="transition-colors hover:border-blue-500 hover:text-blue-600 dark:hover:text-blue-400"
                         >
                             Cancel
                         </AlertDialogCancel>
@@ -422,7 +423,7 @@ export default function ProjectTable({
                         <AlertDialogAction
                             onClick={handleDeleteProject}
                             disabled={isLoading}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="bg-destructive text-white hover:bg-destructive/90"
                         >
                             {isLoading ? "Deleting..." : "Delete Project"}
                         </AlertDialogAction>
