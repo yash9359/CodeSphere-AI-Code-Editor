@@ -14,6 +14,7 @@
     "@monaco-editor/react": "^4.7.0",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^6.19.3",
+    "@react-symbols/icons": "^1.4.1",
     "@shadcn/react": "^0.1.0",
     "@webcontainer/api": "^1.6.4",
     "@xterm/addon-fit": "^0.11.0",
