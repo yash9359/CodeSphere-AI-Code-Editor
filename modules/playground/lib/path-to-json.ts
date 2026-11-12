@@ -87,7 +87,8 @@ export async function scanTemplateDirectory(
         ignorePatterns: [
             /^\..+\.swp$/,  // Vim swap files
             /^\.#/,         // Emacs backup files
-            /~$/            // Backup files
+            /~$/,           // Backup files
+            /\.(ico|png|jpe?g|gif|webp|avif|woff2?|ttf|eot|otf|mp4|webm|mp3|wav|zip|pdf)$/i // Binary assets
         ],
         maxFileSize: 1024 * 1024 // 1MB
     };

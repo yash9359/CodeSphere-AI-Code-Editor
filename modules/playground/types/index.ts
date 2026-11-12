@@ -6,7 +6,7 @@ export interface TemplateFile {
 export interface PlaygroundData {
   id: string;
   name?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface TemplateFolder {
@@ -22,6 +22,7 @@ export interface LoadingStepProps {
 
 export interface OpenFile extends TemplateFile {
   id: string;
+  filePath?: string;
   hasUnsavedChanges: boolean;
   content: string;
   originalContent: string;

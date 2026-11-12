@@ -1,11 +1,11 @@
-import { scanTemplateDirectory } from "@/modules/playground/lib/path-to-json";
+import { scanTemplateDirectory, type TemplateFolder } from "@/modules/playground/lib/path-to-json";
 import { db } from "@/lib/db";
 import { templatePaths } from "@/lib/template";
 import path from "path";
 import { NextRequest } from "next/server";
 
 // In-memory cache to avoid re-scanning filesystem on every request
-const templateCache = new Map<string, any>();
+const templateCache = new Map<string, TemplateFolder>();
 
 
 // Helper function to ensure valid JSON
@@ -53,8 +53,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         }, { status: 404 });
     }
 
-    // Return cached template structure if available (instant response)
-    if (templateCache.has(templateKey)) {
+    // Return cached template structure in production (in dev, always read latest from disk)
+    if (process.env.NODE_ENV === "production" && templateCache.has(templateKey)) {
         return Response.json({
             success: true,
             templateJson: templateCache.get(templateKey)
