@@ -349,6 +349,7 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
                     );
 
                     let lastInstallTick = 0;
+                    const recentInstallLines: string[] = [];
                     installProcess.output
                         .pipeTo(
                             new WritableStream({
@@ -357,6 +358,10 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
                                     const line = extractTerminalLine(data);
                                     if (line) {
                                         setStatusMessage(line);
+                                        recentInstallLines.push(line);
+                                        if (recentInstallLines.length > 8) {
+                                            recentInstallLines.shift();
+                                        }
                                     }
                                     const now = Date.now();
                                     if (now - lastInstallTick > 350) {
@@ -374,8 +379,11 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
                     if (cancelled) return;
 
                     if (installExitCode !== 0) {
+                        const tail = recentInstallLines.slice(-3).join(" | ");
                         throw new Error(
-                            `Failed to install dependencies. Exit code: ${installExitCode}`
+                            tail
+                                ? `Failed to install dependencies (exit code ${installExitCode}): ${tail}`
+                                : `Failed to install dependencies. Exit code: ${installExitCode}`
                         );
                     }
 
@@ -547,13 +555,23 @@ const WebContainerPreview: React.FC<WebContainerPreviewProps> = ({
 
     if (error || setupError) {
         return (
-            <div className="h-full flex items-center justify-center p-4 bg-background">
-                <div className="border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 p-6 rounded-xl max-w-md shadow-sm">
-                    <div className="flex items-center gap-2 mb-3">
-                        <XCircle className="h-5 w-5" />
-                        <h3 className="font-semibold">Error</h3>
+            <div className="h-full w-full flex flex-col bg-background">
+                <div className="flex-1 flex items-center justify-center p-4">
+                    <div className="border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 p-6 rounded-xl max-w-md shadow-sm">
+                        <div className="flex items-center gap-2 mb-3">
+                            <XCircle className="h-5 w-5 shrink-0" />
+                            <h3 className="font-semibold">Error</h3>
+                        </div>
+                        <p className="text-sm break-words">{error || setupError}</p>
                     </div>
-                    <p className="text-sm">{error || setupError}</p>
+                </div>
+                <div className="h-64 p-4 pt-0">
+                    <TerminalComponent
+                        ref={terminalRef}
+                        webContainerInstance={instance}
+                        theme={activeTheme}
+                        className="h-full"
+                    />
                 </div>
             </div>
         );
