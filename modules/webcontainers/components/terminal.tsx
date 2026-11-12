@@ -13,12 +13,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Copy, Trash2, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { WebContainer, WebContainerProcess } from "@webcontainer/api";
+import type { Terminal as XTermTerminal } from "@xterm/xterm";
+import type { FitAddon as XTermFitAddon } from "@xterm/addon-fit";
+import type { SearchAddon as XTermSearchAddon } from "@xterm/addon-search";
 
 interface TerminalProps {
     webcontainerUrl?: string;
     className?: string;
     theme?: "dark" | "light";
-    webContainerInstance?: any;
+    webContainerInstance?: WebContainer | null;
 }
 
 // Define the methods that will be exposed through the ref
@@ -78,7 +82,6 @@ const TERMINAL_THEMES = {
 } as const;
 
 const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
-    webcontainerUrl,
     className,
     theme = "dark",
     webContainerInstance
@@ -87,9 +90,9 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
     const themeRef = useRef<"dark" | "light">(theme);
 
     // Changed only because Terminal is now dynamically imported
-    const term = useRef<any>(null);
-    const fitAddon = useRef<any>(null);
-    const searchAddon = useRef<any>(null);
+    const term = useRef<XTermTerminal | null>(null);
+    const fitAddon = useRef<XTermFitAddon | null>(null);
+    const searchAddon = useRef<XTermSearchAddon | null>(null);
 
     const [isConnected, setIsConnected] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
@@ -100,8 +103,11 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
     const cursorPosition = useRef<number>(0);
     const commandHistory = useRef<string[]>([]);
     const historyIndex = useRef<number>(-1);
-    const currentProcess = useRef<any>(null);
-    const shellProcess = useRef<any>(null);
+    const currentProcess = useRef<WebContainerProcess | null>(null);
+    const shellProcess = useRef<WebContainerProcess | null>(null);
+    const pendingWrites = useRef<string[]>([]);
+    const webContainerRef = useRef<WebContainer | null | undefined>(webContainerInstance);
+    webContainerRef.current = webContainerInstance;
 
     const writePrompt = useCallback(() => {
         if (term.current) {
@@ -111,11 +117,23 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
         }
     }, []);
 
+    const clearTerminal = useCallback(() => {
+        if (term.current) {
+            term.current.clear();
+            term.current.writeln(
+                "🚀 WebContainer Terminal"
+            );
+            writePrompt();
+        }
+    }, [writePrompt]);
+
     // Expose methods through ref
     useImperativeHandle(ref, () => ({
         writeToTerminal: (data: string) => {
             if (term.current) {
                 term.current.write(data);
+            } else {
+                pendingWrites.current.push(data);
             }
         },
         clearTerminal: () => {
@@ -126,10 +144,11 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
                 term.current.focus();
             }
         },
-    }), []);
+    }), [clearTerminal]);
 
     const executeCommand = useCallback(async (command: string) => {
-        if (!webContainerInstance || !term.current) return;
+        const wc = webContainerRef.current;
+        if (!wc || !term.current) return;
 
         // Add to history
         if (
@@ -174,7 +193,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
             // Execute in WebContainer
             term.current.writeln("");
 
-            const process = await webContainerInstance.spawn(
+            const process = await wc.spawn(
                 cmd,
                 args,
                 {
@@ -199,14 +218,14 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
             );
 
             // Wait for process to complete
-            const exitCode = await process.exit;
+            await process.exit;
 
             currentProcess.current = null;
 
             // Show new prompt
             writePrompt();
 
-        } catch (error) {
+        } catch {
             if (term.current) {
                 term.current.writeln(
                     `\r\nCommand not found: ${command}`
@@ -216,7 +235,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
 
             currentProcess.current = null;
         }
-    }, [webContainerInstance, writePrompt]);
+    }, [writePrompt]);
 
     const handleTerminalInput = useCallback((data: string) => {
         if (!term.current) return;
@@ -395,26 +414,26 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
         // Welcome message
         terminal.writeln("🚀 WebContainer Terminal");
         terminal.writeln("Type 'help' for available commands");
-        writePrompt();
+
+        if (pendingWrites.current.length > 0) {
+            for (const chunk of pendingWrites.current) {
+                terminal.write(chunk);
+            }
+            pendingWrites.current = [];
+        }
+
+        if (webContainerRef.current) {
+            setIsConnected(true);
+        }
 
         return terminal;
-    }, [handleTerminalInput, writePrompt]);
+    }, [handleTerminalInput]);
 
     const connectToWebContainer = useCallback(async () => {
         if (!webContainerInstance || !term.current) return;
 
         try {
             setIsConnected(true);
-
-            term.current.writeln(
-                "✅ Connected to WebContainer"
-            );
-
-            term.current.writeln(
-                "Ready to execute commands"
-            );
-
-            writePrompt();
         } catch (error) {
             setIsConnected(false);
 
@@ -427,17 +446,7 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
                 error
             );
         }
-    }, [webContainerInstance, writePrompt]);
-
-    const clearTerminal = useCallback(() => {
-        if (term.current) {
-            term.current.clear();
-            term.current.writeln(
-                "🚀 WebContainer Terminal"
-            );
-            writePrompt();
-        }
-    }, [writePrompt]);
+    }, [webContainerInstance]);
 
     const copyTerminalContent = useCallback(async () => {
         if (term.current) {
@@ -523,13 +532,9 @@ const TerminalComponent = forwardRef<TerminalRef, TerminalProps>(({
         return () => {
             resizeObserver.disconnect();
 
-            if (currentProcess.current) {
-                currentProcess.current.kill();
-            }
-
-            if (shellProcess.current) {
-                shellProcess.current.kill();
-            }
+            currentProcess.current?.kill();
+            const activeShell = shellProcess.current;
+            activeShell?.kill();
 
             if (term.current) {
                 term.current.dispose();

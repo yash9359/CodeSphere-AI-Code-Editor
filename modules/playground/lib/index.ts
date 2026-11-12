@@ -1,10 +1,34 @@
 import { TemplateFile, TemplateFolder } from "./path-to-json";
 
+function findFilePathByReference(
+    file: TemplateFile,
+    folder: TemplateFolder,
+    pathSoFar: string[] = []
+): string | null {
+    for (const item of folder.items) {
+        if ("folderName" in item) {
+            const res = findFilePathByReference(file, item, [...pathSoFar, item.folderName]);
+            if (res) return res;
+        } else if (item === file) {
+            return [
+                ...pathSoFar,
+                item.filename + (item.fileExtension ? "." + item.fileExtension : ""),
+            ].join("/");
+        }
+    }
+    return null;
+}
+
 export function findFilePath(
     file: TemplateFile,
     folder: TemplateFolder,
     pathSoFar: string[] = []
 ): string | null {
+    if (pathSoFar.length === 0) {
+        const refMatch = findFilePathByReference(file, folder);
+        if (refMatch) return refMatch;
+    }
+
     for (const item of folder.items) {
         if ("folderName" in item) {
             const res = findFilePath(file, item, [...pathSoFar, item.folderName]);

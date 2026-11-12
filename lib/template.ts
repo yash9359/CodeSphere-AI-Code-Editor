@@ -1,5 +1,5 @@
 export const templatePaths = {
-    REACT: "/codesphere-starters/react-ts",
+    REACT: "/codesphere-starters/react-vite",
     NEXTJS: "/codesphere-starters/nextjs",
     VUE: "/codesphere-starters/vue",
     HONO: "/codesphere-starters/hono-nodejs-starter",

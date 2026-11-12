@@ -183,12 +183,12 @@ export default function ProjectTable({
                             >
                                 <TableCell className="font-medium">
                                     <div className="flex flex-col">
-                                        <Link
+                                        <a
                                             href={`/playground/${project.id}`}
                                             className="transition-colors hover:text-blue-600 dark:hover:text-blue-400 hover:underline"
                                         >
                                             <span className="font-semibold">{project.title}</span>
-                                        </Link>
+                                        </a>
 
                                         <span className="text-sm text-muted-foreground line-clamp-1">
                                             {project.description}
@@ -263,13 +263,13 @@ export default function ProjectTable({
                                                 asChild
                                                 className="focus:bg-blue-500/10 focus:text-blue-600 dark:focus:text-blue-400"
                                             >
-                                                <Link
+                                                <a
                                                     href={`/playground/${project.id}`}
                                                     className="flex items-center"
                                                 >
                                                     <Eye className="h-4 w-4 mr-2" />
                                                     Open Project
-                                                </Link>
+                                                </a>
                                             </DropdownMenuItem>
 
                                             <DropdownMenuItem

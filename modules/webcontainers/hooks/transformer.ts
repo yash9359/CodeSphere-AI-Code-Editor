@@ -22,7 +22,7 @@ export function transformToWebContainerFormat(template: TemplateFolder): WebCont
 
             item.items.forEach(subItem => {
                 const key = "fileExtension" in subItem
-                    ? `${subItem.filename}.${subItem.fileExtension}`
+                    ? (subItem.fileExtension ? `${subItem.filename}.${subItem.fileExtension}` : subItem.filename)
                     : subItem.folderName;
                 directoryContents[key] = processItem(subItem);
             });
@@ -44,10 +44,10 @@ export function transformToWebContainerFormat(template: TemplateFolder): WebCont
 
     template.items.forEach(item => {
         const key = "fileExtension" in item
-            ? `${item.filename}.${item.fileExtension}`
+            ? (item.fileExtension ? `${item.filename}.${item.fileExtension}` : item.filename)
             : item.folderName;
         result[key] = processItem(item);
     });
 
     return result;
-} 1
+}

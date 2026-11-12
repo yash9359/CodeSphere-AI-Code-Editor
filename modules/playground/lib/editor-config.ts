@@ -52,10 +52,69 @@ export const getEditorLanguage = (fileExtension: string): string => {
     return languageMap[extension] || "plaintext";
 };
 
+const AMBIENT_REACT_JSX_LIB = `
+declare module "react" {
+    export type ReactNode = any;
+    export type ReactElement = any;
+    export type FC<P = {}> = (props: P & { children?: ReactNode }) => ReactElement | null;
+    export type Dispatch<A> = (value: A) => void;
+    export type SetStateAction<S> = S | ((prevState: S) => S);
+    export type RefObject<T> = { readonly current: T | null };
+    export type MutableRefObject<T> = { current: T };
+    export type DependencyList = readonly any[];
+    export function useState<S>(initialState: S | (() => S)): [S, Dispatch<SetStateAction<S>>];
+    export function useState<S = undefined>(): [S | undefined, Dispatch<SetStateAction<S | undefined>>];
+    export function useEffect(effect: () => void | (() => void), deps?: DependencyList): void;
+    export function useLayoutEffect(effect: () => void | (() => void), deps?: DependencyList): void;
+    export function useRef<T>(initialValue: T): MutableRefObject<T>;
+    export function useRef<T>(initialValue: T | null): RefObject<T>;
+    export function useCallback<T extends (...args: any[]) => any>(callback: T, deps: DependencyList): T;
+    export function useMemo<T>(factory: () => T, deps: DependencyList): T;
+    export function useReducer<R extends (state: any, action: any) => any>(reducer: R, initialState: any): [any, Dispatch<any>];
+    export function useContext<T>(context: any): T;
+    export function createContext<T>(defaultValue: T): any;
+    export const StrictMode: FC<{ children?: ReactNode }>;
+    export const Fragment: FC<{ children?: ReactNode }>;
+    const React: any;
+    export default React;
+}
+declare module "react/jsx-runtime" {
+    export const jsx: any;
+    export const jsxs: any;
+    export const Fragment: any;
+}
+declare module "react/jsx-dev-runtime" {
+    export const jsxDEV: any;
+    export const Fragment: any;
+}
+declare module "react-dom/client" {
+    export function createRoot(container: Element | DocumentFragment): {
+        render(children: any): void;
+        unmount(): void;
+    };
+}
+declare namespace JSX {
+    type Element = any;
+    interface IntrinsicElements {
+        [elemName: string]: any;
+    }
+    interface IntrinsicAttributes {
+        key?: string | number | bigint | null | undefined;
+    }
+}
+`;
+
+const configuredMonacoInstances = new WeakSet<Monaco>();
+
 export const configureMonaco = (
     monaco: Monaco,
     initialTheme: "light" | "dark" = "dark"
 ) => {
+    if (configuredMonacoInstances.has(monaco)) {
+        monaco.editor.setTheme(initialTheme === "light" ? "modern-light" : "modern-dark");
+        return;
+    }
+    configuredMonacoInstances.add(monaco);
     // Define a crisp modern light theme
     monaco.editor.defineTheme("modern-light", {
         base: "vs",
@@ -391,27 +450,42 @@ export const configureMonaco = (
     monaco.editor.setTheme(initialTheme === "light" ? "modern-light" : "modern-dark");
 
     // Configure additional editor settings
-    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+    const sharedDiagnosticsOptions = {
         noSemanticValidation: false,
         noSyntaxValidation: false,
-    });
+        // Ignore unresolvable external package / CSS imports that live only inside WebContainer's node_modules
+        diagnosticCodesToIgnore: [2307, 2792],
+    };
 
-    monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
-        noSemanticValidation: false,
-        noSyntaxValidation: false,
-    });
+    monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions(sharedDiagnosticsOptions);
+    monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions(sharedDiagnosticsOptions);
+
+    // Provide lightweight ambient React + JSX declarations so TSX/JSX files don't show false red squiggles
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(
+        AMBIENT_REACT_JSX_LIB,
+        "ts:filename/codesphere-react-jsx.d.ts"
+    );
+    monaco.languages.typescript.javascriptDefaults.addExtraLib(
+        AMBIENT_REACT_JSX_LIB,
+        "js:filename/codesphere-react-jsx.d.ts"
+    );
 
     // Set compiler options for better IntelliSense
     monaco.languages.typescript.javascriptDefaults.setCompilerOptions({
         target: monaco.languages.typescript.ScriptTarget.Latest,
         allowNonTsExtensions: true,
         moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-        module: monaco.languages.typescript.ModuleKind.CommonJS,
+        module: monaco.languages.typescript.ModuleKind.ESNext,
         noEmit: true,
         esModuleInterop: true,
-        jsx: monaco.languages.typescript.JsxEmit.React,
+        allowSyntheticDefaultImports: true,
+        jsx: monaco.languages.typescript.JsxEmit.ReactJSX,
         reactNamespace: "React",
         allowJs: true,
+        checkJs: false,
+        noImplicitAny: false,
+        resolveJsonModule: true,
+        skipLibCheck: true,
         typeRoots: ["node_modules/@types"],
     });
 
@@ -419,13 +493,17 @@ export const configureMonaco = (
         target: monaco.languages.typescript.ScriptTarget.Latest,
         allowNonTsExtensions: true,
         moduleResolution: monaco.languages.typescript.ModuleResolutionKind.NodeJs,
-        module: monaco.languages.typescript.ModuleKind.CommonJS,
+        module: monaco.languages.typescript.ModuleKind.ESNext,
         noEmit: true,
         esModuleInterop: true,
         allowSyntheticDefaultImports: true,
-        jsx: monaco.languages.typescript.JsxEmit.React,
+        jsx: monaco.languages.typescript.JsxEmit.ReactJSX,
         reactNamespace: "React",
         allowJs: true,
+        noImplicitAny: false,
+        isolatedModules: true,
+        resolveJsonModule: true,
+        skipLibCheck: true,
         typeRoots: ["node_modules/@types"],
     });
 };

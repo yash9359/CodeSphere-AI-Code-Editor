@@ -1,31 +1,54 @@
 "use client"
 
-import { useRef, useEffect, useCallback } from "react"
+import { useRef, useEffect, useCallback, useMemo, type MutableRefObject } from "react"
 import { useTheme } from "next-themes"
-import Editor, { type Monaco } from "@monaco-editor/react"
+import Editor, { type Monaco, type OnMount } from "@monaco-editor/react"
 import { configureMonaco, defaultEditorOptions, getEditorLanguage } from "@/modules/playground/lib/editor-config"
 import type { TemplateFile } from "@/modules/playground/lib/path-to-json"
 
+type MonacoEditorInstance = Parameters<OnMount>[0]
+type MonacoEditorOptions = NonNullable<Parameters<MonacoEditorInstance["updateOptions"]>[0]>
+type DisposableHandle = { dispose: () => void }
+type ContextKeyHandle<T> = { set: (value: T) => void }
+type ModelType = ReturnType<MonacoEditorInstance["getModel"]>
+type PositionType = ReturnType<MonacoEditorInstance["getPosition"]>
+
+interface EditorFile extends TemplateFile {
+    id?: string
+}
+
 interface PlaygroundEditorProps {
-    activeFile: TemplateFile | undefined
+    playgroundId?: string
+    activeFile: EditorFile | undefined
+    openFileIds?: string[]
     content: string
-    onContentChange: (value: string) => void
+    onContentChange: (value: string, fileId?: string) => void
+    editorContentGetterRef?: MutableRefObject<((fileId?: string) => string | undefined) | null>
     suggestion: string | null
     suggestionLoading: boolean
     suggestionPosition: { line: number; column: number } | null
-    onAcceptSuggestion: (editor: any, monaco: any) => void
-    onRejectSuggestion: (editor: any) => void
-    onTriggerSuggestion: (type: string, editor: any) => void
+    onAcceptSuggestion: (editor: MonacoEditorInstance, monaco: Monaco) => void
+    onRejectSuggestion: (editor: MonacoEditorInstance) => void
+    onTriggerSuggestion: (type: string, editor: MonacoEditorInstance) => void
 }
 
 // Characters after which an AI suggestion is requested automatically
 const TRIGGER_CHARACTERS = new Set(["\n", "{", ".", "=", "(", ",", ":", ";"])
 const TRIGGER_DELAY_MS = 500
 
+function getModelPath(playgroundId: string | undefined, fileId: string): string {
+    const scope = encodeURIComponent(playgroundId || "default")
+    const normalized = fileId.replace(/^\/+/, "")
+    return `playground://${scope}/${normalized}`
+}
+
 const PlaygroundEditor = ({
+    playgroundId,
     activeFile,
+    openFileIds,
     content,
     onContentChange,
+    editorContentGetterRef,
     suggestion,
     suggestionLoading,
     suggestionPosition,
@@ -33,16 +56,57 @@ const PlaygroundEditor = ({
     onRejectSuggestion,
     onTriggerSuggestion,
 }: PlaygroundEditorProps) => {
-    const editorRef = useRef<any>(null)
+    const activeFileId =
+        activeFile?.id ||
+        (activeFile
+            ? `${activeFile.filename}${activeFile.fileExtension ? `.${activeFile.fileExtension}` : ""}`
+            : undefined)
+    const activeFileExtension = activeFile?.fileExtension || ""
+    const modelPath = activeFileId ? getModelPath(playgroundId, activeFileId) : undefined
+
+    const editorRef = useRef<MonacoEditorInstance | null>(null)
     const monacoRef = useRef<Monaco | null>(null)
-    const inlineCompletionProviderRef = useRef<any>(null)
-    const suggestionVisibleKeyRef = useRef<any>(null)
+    const inlineCompletionProviderRef = useRef<DisposableHandle | null>(null)
+    const suggestionVisibleKeyRef = useRef<ContextKeyHandle<boolean> | null>(null)
     const isAcceptingSuggestionRef = useRef(false)
     const suggestionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const lastEmittedByFileRef = useRef<Map<string, string>>(new Map())
+    const prevOpenFileIdsRef = useRef<string[]>([])
+    const playgroundIdRef = useRef(playgroundId)
+    const activeFileIdRef = useRef(activeFileId)
+    const onContentChangeRef = useRef(onContentChange)
     const { resolvedTheme } = useTheme()
     const activeThemeMode: "light" | "dark" = resolvedTheme === "light" ? "light" : "dark"
     const editorTheme = activeThemeMode === "light" ? "modern-light" : "modern-dark"
     const activeThemeModeRef = useRef<"light" | "dark">(activeThemeMode)
+
+    playgroundIdRef.current = playgroundId
+    activeFileIdRef.current = activeFileId
+    onContentChangeRef.current = onContentChange
+
+    const editorOptions = useMemo<MonacoEditorOptions>(
+        () =>
+            ({
+                ...defaultEditorOptions,
+                inlineSuggest: {
+                    enabled: true,
+                    mode: "prefix",
+                    suppressSuggestions: false,
+                },
+                suggest: {
+                    preview: false,
+                    showInlineDetails: false,
+                    insertMode: "replace",
+                },
+                quickSuggestions: {
+                    other: true,
+                    comments: false,
+                    strings: false,
+                },
+                cursorSmoothCaretAnimation: "on",
+            }) as unknown as MonacoEditorOptions,
+        [],
+    )
 
     useEffect(() => {
         activeThemeModeRef.current = activeThemeMode
@@ -138,10 +202,10 @@ const PlaygroundEditor = ({
         if (!suggestion || !suggestionPosition) return
 
         const cleanSuggestion = suggestion.replace(/\r/g, "")
-        const language = getEditorLanguage(activeFile?.fileExtension || "")
+        const language = getEditorLanguage(activeFileExtension)
 
         const provider = monaco.languages.registerInlineCompletionsProvider(language, {
-            provideInlineCompletions: async (_model: any, position: any) => {
+            provideInlineCompletions: async (_model: NonNullable<ModelType>, position: NonNullable<PositionType>) => {
                 const isPositionMatch =
                     position.lineNumber === suggestionPosition.line &&
                     position.column >= suggestionPosition.column &&
@@ -165,7 +229,7 @@ const PlaygroundEditor = ({
                     ],
                 }
             },
-            disposeInlineCompletions: () => {},
+            disposeInlineCompletions: () => { },
         })
         inlineCompletionProviderRef.current = provider
 
@@ -180,31 +244,41 @@ const PlaygroundEditor = ({
                 inlineCompletionProviderRef.current = null
             }
         }
-    }, [suggestion, suggestionPosition, activeFile])
+    }, [suggestion, suggestionPosition, activeFileId, activeFileExtension])
 
-    const handleEditorDidMount = (editor: any, monaco: Monaco) => {
+    const handleEditorChange = useCallback((value: string | undefined) => {
+        const nextValue = value ?? ""
+        const fileId = activeFileIdRef.current
+        if (fileId) {
+            lastEmittedByFileRef.current.set(fileId, nextValue)
+        }
+        onContentChangeRef.current(nextValue, fileId)
+    }, [])
+
+    const handleEditorBeforeMount = useCallback((monaco: Monaco) => {
+        configureMonaco(monaco, activeThemeModeRef.current)
+    }, [])
+
+    const handleEditorDidMount = (editor: MonacoEditorInstance, monaco: Monaco) => {
         editorRef.current = editor
         monacoRef.current = monaco
 
-        editor.updateOptions({
-            ...defaultEditorOptions,
-            inlineSuggest: {
-                enabled: true,
-                mode: "prefix",
-                suppressSuggestions: false,
-            },
-            suggest: {
-                preview: false,
-                showInlineDetails: false,
-                insertMode: "replace",
-            },
-            quickSuggestions: {
-                other: true,
-                comments: false,
-                strings: false,
-            },
-            cursorSmoothCaretAnimation: "on",
-        })
+        if (editorContentGetterRef) {
+            editorContentGetterRef.current = (targetFileId?: string) => {
+                const resolvedId = targetFileId || activeFileIdRef.current
+                if (resolvedId && monacoRef.current) {
+                    const targetModel = monacoRef.current.editor.getModel(
+                        monacoRef.current.Uri.parse(getModelPath(playgroundIdRef.current, resolvedId)),
+                    )
+                    if (targetModel) {
+                        return targetModel.getValue()
+                    }
+                }
+                return editorRef.current?.getModel?.()?.getValue?.()
+            }
+        }
+
+        editor.updateOptions(editorOptions)
 
         configureMonaco(monaco, activeThemeModeRef.current)
 
@@ -233,7 +307,7 @@ const PlaygroundEditor = ({
         editor.addCommand(monaco.KeyCode.Escape, rejectSuggestion, "editorTextFocus && aiSuggestionVisible")
 
         // Reject the suggestion when the cursor moves away from it
-        editor.onDidChangeCursorPosition((e: any) => {
+        editor.onDidChangeCursorPosition((e) => {
             if (isAcceptingSuggestionRef.current) return
 
             const position = suggestionPositionRef.current
@@ -248,13 +322,13 @@ const PlaygroundEditor = ({
             }
         })
 
-        editor.onDidChangeModelContent((e: any) => {
+        editor.onDidChangeModelContent((e) => {
             if (isAcceptingSuggestionRef.current || e.changes.length === 0) return
 
             const change = e.changes[0]
 
-            // User typed something while a suggestion was shown: drop it
-            if (suggestionRef.current) {
+            // Clear any shown suggestion or pending AI request when the user edits or cuts text
+            if (suggestionRef.current || suggestionLoadingRef.current) {
                 rejectSuggestion()
             }
 
@@ -277,33 +351,80 @@ const PlaygroundEditor = ({
         updateEditorLanguage()
     }
 
-    const updateEditorLanguage = () => {
-        if (!activeFile || !monacoRef.current || !editorRef.current) return
+    const updateEditorLanguage = useCallback(() => {
+        if (!monacoRef.current || !editorRef.current) return
         const model = editorRef.current.getModel()
         if (!model) return
 
-        const language = getEditorLanguage(activeFile.fileExtension || "")
+        const language = getEditorLanguage(activeFileExtension)
         try {
             monacoRef.current.editor.setModelLanguage(model, language)
         } catch (error) {
             console.warn("Failed to set editor language:", error)
         }
-    }
+    }, [activeFileExtension])
 
     useEffect(() => {
         updateEditorLanguage()
-    }, [activeFile])
+    }, [activeFileId, updateEditorLanguage])
+
+    // Dispose Monaco models for closed tabs so reopening them reads the saved file content cleanly
+    useEffect(() => {
+        const currentIds = openFileIds ?? []
+        const prevIds = prevOpenFileIdsRef.current
+        prevOpenFileIdsRef.current = currentIds
+
+        if (!monacoRef.current) return
+
+        const currentSet = new Set(currentIds)
+        for (const prevId of prevIds) {
+            if (!currentSet.has(prevId)) {
+                lastEmittedByFileRef.current.delete(prevId)
+                const uri = monacoRef.current.Uri.parse(getModelPath(playgroundId, prevId))
+                monacoRef.current.editor.getModel(uri)?.dispose()
+            }
+        }
+    }, [openFileIds, playgroundId])
+
+    // Apply genuine external updates (when not triggered by user typing) without ever clobbering active typing
+    useEffect(() => {
+        if (!activeFileId || !monacoRef.current || !editorRef.current) return
+        if (lastEmittedByFileRef.current.get(activeFileId) === content) return
+
+        const model = monacoRef.current.editor.getModel(
+            monacoRef.current.Uri.parse(getModelPath(playgroundId, activeFileId)),
+        )
+        if (!model || model.getValue() === content) return
+
+        if (!lastEmittedByFileRef.current.has(activeFileId) && !editorRef.current.hasTextFocus()) {
+            model.setValue(content)
+        }
+    }, [activeFileId, content, playgroundId])
 
     // Cleanup on unmount
     useEffect(() => {
+        const getterRef = editorContentGetterRef
+        const emittedMap = lastEmittedByFileRef.current
         return () => {
             if (suggestionTimeoutRef.current) {
                 clearTimeout(suggestionTimeoutRef.current)
             }
             inlineCompletionProviderRef.current?.dispose()
             inlineCompletionProviderRef.current = null
+            if (getterRef) {
+                getterRef.current = null
+            }
+            if (monacoRef.current) {
+                const scopePrefix = `playground://${encodeURIComponent(playgroundIdRef.current || "default")}/`
+                for (const model of monacoRef.current.editor.getModels()) {
+                    if (model.uri.toString().startsWith(scopePrefix)) {
+                        model.dispose()
+                    }
+                }
+            }
+            emittedMap.clear()
         }
-    }, [])
+    }, [editorContentGetterRef])
 
     return (
         <div className="relative h-full w-full min-w-0 overflow-hidden bg-background">
@@ -325,12 +446,13 @@ const PlaygroundEditor = ({
                 height="100%"
                 width="100%"
                 theme={editorTheme}
-                value={content}
-                onChange={(value) => onContentChange(value || "")}
+                path={modelPath}
+                defaultValue={content}
+                beforeMount={handleEditorBeforeMount}
+                onChange={handleEditorChange}
                 onMount={handleEditorDidMount}
-                language={activeFile ? getEditorLanguage(activeFile.fileExtension || "") : "plaintext"}
-                // @ts-expect-error defaultEditorOptions uses plain string literals instead of Monaco's option types
-                options={defaultEditorOptions}
+                language={activeFileExtension ? getEditorLanguage(activeFileExtension) : "plaintext"}
+                options={editorOptions}
             />
         </div>
     )

@@ -71,8 +71,33 @@ import {
 } from "lucide-react";
 
 import { useParams } from "next/navigation";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+
+function updateFileInTreeByPath(
+    folder: TemplateFolder,
+    pathSegments: string[],
+    nextContent: string,
+): boolean {
+    if (pathSegments.length === 0) return false;
+    const [head, ...rest] = pathSegments;
+
+    for (let i = 0; i < folder.items.length; i++) {
+        const item = folder.items[i];
+        if ("folderName" in item) {
+            if (rest.length > 0 && item.folderName === head) {
+                return updateFileInTreeByPath(item, rest, nextContent);
+            }
+        } else if (rest.length === 0) {
+            const fullName = item.filename + (item.fileExtension ? `.${item.fileExtension}` : "");
+            if (fullName === head) {
+                folder.items[i] = { ...item, content: nextContent };
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 const MainPlaygroundPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -121,13 +146,25 @@ const MainPlaygroundPage = () => {
         instance,
         isLoading: containerLoading,
         writeFileSync,
-        // @ts-expect-error todo
     } = useWebContainer({ templateData: explorerTemplateData });
 
     // console.log("templateData", templateData);
     // console.log("playgroundData", playgroundData);
 
     const lastSyncedContent = useRef<Map<string, string>>(new Map());
+    const editorContentGetterRef = useRef<((fileId?: string) => string | undefined) | null>(null);
+    const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
+    const openFileIds = useMemo(() => openFiles.map((file) => file.id), [openFiles]);
+
+    const handleEditorContentChange = useCallback(
+        (value: string, fileId?: string) => {
+            const targetId = fileId || useFileExplorer.getState().activeFileId;
+            if (targetId) {
+                updateFileContent(targetId, value);
+            }
+        },
+        [updateFileContent],
+    );
 
     useEffect(() => {
         setPlaygroundId(id);
@@ -218,97 +255,108 @@ const MainPlaygroundPage = () => {
     };
 
     const handleSave = useCallback(
-        async (fileId?: string) => {
-            const targetFileId = fileId || activeFileId;
-            if (!targetFileId) return;
+        (fileId?: string) => {
+            const runSave = async () => {
+                const storeState = useFileExplorer.getState();
+                const targetFileId = fileId || storeState.activeFileId;
+                if (!targetFileId) return;
 
-            const fileToSave = openFiles.find((f) => f.id === targetFileId);
-            if (!fileToSave) return;
+                const fileToSave = storeState.openFiles.find((f) => f.id === targetFileId);
+                if (!fileToSave) return;
 
-            const latestTemplateData = useFileExplorer.getState().templateData;
-            if (!latestTemplateData) return;
+                const latestTemplateData = storeState.templateData;
+                if (!latestTemplateData) return;
 
-            try {
-                const filePath = findFilePath(fileToSave, latestTemplateData);
-                if (!filePath) {
-                    toast.error(
-                        `Could not find path for file: ${fileToSave.filename}.${fileToSave.fileExtension}`,
-                    );
-                    return;
+                const liveContent = editorContentGetterRef.current?.(targetFileId);
+                const contentToSave = liveContent !== undefined ? liveContent : fileToSave.content;
+                if (liveContent !== undefined && liveContent !== fileToSave.content) {
+                    storeState.updateFileContent(targetFileId, contentToSave);
                 }
 
-                // Update file content in template data (clone for immutability)
-                const updatedTemplateData = JSON.parse(
-                    JSON.stringify(latestTemplateData),
-                ) as TemplateFolder;
-                const updateFileContent = (items: TemplateItem[]): TemplateItem[] =>
-                    items.map((item) => {
-                        if ("folderName" in item) {
-                            return { ...item, items: updateFileContent(item.items) };
-                        } else if (
-                            item.filename === fileToSave.filename &&
-                            item.fileExtension === fileToSave.fileExtension
-                        ) {
-                            return { ...item, content: fileToSave.content };
-                        }
-                        return item;
-                    });
-                updatedTemplateData.items = updateFileContent(
-                    updatedTemplateData.items,
-                );
-
-                // Sync with WebContainer
-                if (writeFileSync) {
-                    await writeFileSync(filePath, fileToSave.content);
-                    lastSyncedContent.current.set(fileToSave.id, fileToSave.content);
-                    if (instance && instance.fs) {
-                        await instance.fs.writeFile(filePath, fileToSave.content);
+                try {
+                    const filePath =
+                        fileToSave.filePath || findFilePath(fileToSave, latestTemplateData);
+                    if (!filePath) {
+                        toast.error(
+                            `Could not find path for file: ${fileToSave.filename}.${fileToSave.fileExtension}`,
+                        );
+                        return;
                     }
+
+                    // Update only the target file in template data (clone for immutability)
+                    const updatedTemplateData = JSON.parse(
+                        JSON.stringify(latestTemplateData),
+                    ) as TemplateFolder;
+                    const normalizedPath = filePath.replace(/^\/+/, "");
+                    const updatedExact = updateFileInTreeByPath(
+                        updatedTemplateData,
+                        normalizedPath.split("/"),
+                        contentToSave,
+                    );
+                    if (!updatedExact) {
+                        const fallbackUpdate = (items: TemplateItem[]): TemplateItem[] =>
+                            items.map((item) => {
+                                if ("folderName" in item) {
+                                    return { ...item, items: fallbackUpdate(item.items) };
+                                } else if (
+                                    item.filename === fileToSave.filename &&
+                                    item.fileExtension === fileToSave.fileExtension
+                                ) {
+                                    return { ...item, content: contentToSave };
+                                }
+                                return item;
+                            });
+                        updatedTemplateData.items = fallbackUpdate(updatedTemplateData.items);
+                    }
+
+                    // Sync with WebContainer
+                    if (writeFileSync) {
+                        await writeFileSync(normalizedPath, contentToSave);
+                        lastSyncedContent.current.set(fileToSave.id, contentToSave);
+                    }
+
+                    // Persist changes to database
+                    await saveTemplateData(updatedTemplateData);
+                    setTemplateData(updatedTemplateData);
+                    setPreviewRefreshKey((current) => current + 1);
+
+                    // Mark saved without clobbering any newer edits typed while saving
+                    useFileExplorer.setState((current) => ({
+                        openFiles: current.openFiles.map((f) =>
+                            f.id === targetFileId
+                                ? {
+                                    ...f,
+                                    filePath: normalizedPath,
+                                    originalContent: contentToSave,
+                                    hasUnsavedChanges: f.content !== contentToSave,
+                                }
+                                : f,
+                        ),
+                    }));
+
+                    toast.success(
+                        `Saved ${fileToSave.filename}.${fileToSave.fileExtension}`,
+                    );
+                } catch (error) {
+                    console.error("Error saving file:", error);
+                    toast.error(
+                        `Failed to save ${fileToSave.filename}.${fileToSave.fileExtension}`,
+                    );
+                    throw error;
                 }
+            };
 
-                // Use saveTemplateData to persist changes
-                await saveTemplateData(updatedTemplateData);
-                setTemplateData(updatedTemplateData);
-                setPreviewRefreshKey((current) => current + 1);
-
-                // Update open files
-                const updatedOpenFiles = openFiles.map((f) =>
-                    f.id === targetFileId
-                        ? {
-                            ...f,
-                            content: fileToSave.content,
-                            originalContent: fileToSave.content,
-                            hasUnsavedChanges: false,
-                        }
-                        : f,
-                );
-                setOpenFiles(updatedOpenFiles);
-
-                toast.success(
-                    `Saved ${fileToSave.filename}.${fileToSave.fileExtension}`,
-                );
-            } catch (error) {
-                console.error("Error saving file:", error);
-                toast.error(
-                    `Failed to save ${fileToSave.filename}.${fileToSave.fileExtension}`,
-                );
-                throw error;
-            }
+            const nextSave = saveQueueRef.current.then(runSave, runSave);
+            saveQueueRef.current = nextSave.catch(() => undefined);
+            return nextSave;
         },
-        [
-            activeFileId,
-            openFiles,
-            writeFileSync,
-            instance,
-            saveTemplateData,
-            setTemplateData,
-            setOpenFiles,
-            setPreviewRefreshKey,
-        ],
+        [writeFileSync, saveTemplateData, setTemplateData],
     );
 
     const handleSaveAll = useCallback(async () => {
-        const unsavedFiles = openFiles.filter((f) => f.hasUnsavedChanges);
+        const unsavedFiles = useFileExplorer
+            .getState()
+            .openFiles.filter((f) => f.hasUnsavedChanges);
 
         if (unsavedFiles.length === 0) {
             toast.info("No unsaved changes");
@@ -325,13 +373,14 @@ const MainPlaygroundPage = () => {
         } catch (error) {
             toast.error("Failed to save some files");
         }
-    }, [handleSave, openFiles]);
+    }, [handleSave]);
 
     // Add event to save file by click ctrl + s
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
                 e.preventDefault();
+                if (e.repeat) return;
                 if (e.shiftKey) {
                     handleSaveAll();
                 } else {
@@ -346,7 +395,7 @@ const MainPlaygroundPage = () => {
     // Error state
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
+            <div className="flex flex-1 flex-col items-center justify-center w-full min-h-screen p-4">
                 <AlertCircle className="h-12 w-12 text-destructive mb-4" />
                 <h2 className="text-xl font-semibold text-destructive mb-2">
                     Something went wrong
@@ -362,7 +411,7 @@ const MainPlaygroundPage = () => {
     // Loading state
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
+            <div className="flex flex-1 flex-col items-center justify-center w-full min-h-screen p-4">
                 <div className="w-full max-w-md p-6 rounded-xl bg-card border border-border shadow-[0_1px_3px_rgba(15,23,42,0.06),0_8px_24px_rgba(15,23,42,0.06)] dark:shadow-sm">
                     <h2 className="text-xl font-semibold mb-6 text-center text-foreground">
                         Loading Playground
@@ -388,7 +437,7 @@ const MainPlaygroundPage = () => {
     // No template data
     if (!explorerTemplateData) {
         return (
-            <div className="flex flex-col items-center justify-center h-[calc(100vh-4rem)] p-4">
+            <div className="flex flex-1 flex-col items-center justify-center w-full min-h-screen p-4">
                 <FolderOpen className="h-12 w-12 text-amber-500 mb-4" />
                 <h2 className="text-xl font-semibold text-amber-700 dark:text-amber-400 mb-2">
                     No template data available
@@ -784,11 +833,12 @@ const MainPlaygroundPage = () => {
                                     <ResizablePanelGroup orientation="horizontal">
                                         <ResizablePanel defaultSize={isPreviewVisible ? 50 : 100}>
                                             <PlaygroundEditor
+                                                playgroundId={id}
                                                 activeFile={activeFile}
+                                                openFileIds={openFileIds}
                                                 content={activeFile?.content || ""}
-                                                onContentChange={(value) => {
-                                                    activeFileId && updateFileContent(activeFileId, value)
-                                                }}
+                                                onContentChange={handleEditorContentChange}
+                                                editorContentGetterRef={editorContentGetterRef}
                                                 suggestion={aiSuggestions.suggestion}
                                                 suggestionLoading={aiSuggestions.isLoading}
                                                 suggestionPosition={aiSuggestions.position}
@@ -806,12 +856,13 @@ const MainPlaygroundPage = () => {
                                                 <ResizableHandle />
                                                 <ResizablePanel defaultSize={50}>
                                                     <WebContainerPreview
+                                                        playgroundId={id}
                                                         templateData={explorerTemplateData}
                                                         instance={instance}
                                                         writeFileSync={writeFileSync}
                                                         isLoading={containerLoading}
                                                         error={containerError}
-                                                        serverUrl={serverUrl!}
+                                                        serverUrl={serverUrl}
                                                         forceResetup={false}
                                                         refreshKey={previewRefreshKey}
                                                     />
